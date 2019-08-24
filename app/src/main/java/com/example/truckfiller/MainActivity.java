@@ -1,5 +1,9 @@
 package com.example.truckfiller;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -11,6 +15,7 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ToggleButton;
@@ -37,9 +42,10 @@ public class MainActivity extends AppCompatActivity {
     private boolean autorisationRotation80SiPossibleDeFaireUnRang = true;
     private boolean autorisationRotation100SiPossibleDeFaireUnRang = false;
 
+    private View drawlocation ;
+    private LinearLayout resultatLinearLayout;
 
-
-
+    DrawView drawView;
 
 
 
@@ -53,10 +59,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
+
+
 
         final FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -66,6 +78,9 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+
+
 
 
         nombre80120 = findViewById(R.id.nombre80120);
@@ -165,8 +180,6 @@ switchAutoriserRotation80Seulle.setOnClickListener(new View.OnClickListener() {
 
 
 
-
-
     }
 private void switcherEtat(boolean etat){
 
@@ -198,6 +211,8 @@ private void switcherEtat(boolean etat){
 
 
     private void calculer(){
+
+
         Remorque remorque = new Remorque();
         remorque.hauteur = 300;
         remorque.largeur = 240;
@@ -244,17 +259,17 @@ private void switcherEtat(boolean etat){
         boolean continuer = true;
       //  int i = 1 ;
        // while(continuer){
-
-            double a = remorque.largeur / listeP80.get(0).largeur;
-            if((a*listeP80.get(0).largeur) % a  == 0) {
-                System.out.println("P80 : la largeur autorise des rangs complets de : " + a);
-            }
-                a = remorque.largeur / listeP80.get(0).longueur;
-                if((a*listeP80.get(0).longueur) % a  == 0){
-                    System.out.println("P80 : la longueur autorise des rangs complets de : "+ a);
-              //  i++;
-            }
-
+try {
+    double a = remorque.largeur / listeP80.get(0).largeur;
+    if ((a * listeP80.get(0).largeur) % a == 0) {
+        System.out.println("P80 : la largeur autorise des rangs complets de : " + a);
+    }
+    a = remorque.largeur / listeP80.get(0).longueur;
+    if ((a * listeP80.get(0).longueur) % a == 0) {
+        System.out.println("P80 : la longueur autorise des rangs complets de : " + a);
+        //  i++;
+    }
+}catch(Exception e){}
       //  }
 
 
@@ -314,6 +329,39 @@ private void switcherEtat(boolean etat){
         resultat.setText("Rang A : " +longueurRangA/100 +"    Reste : " +resteA/100  +"\n" +
                 "Rang B : " +longueurRangB/100 +"    Reste : "+resteB/100 );
 
+/*
+// drawlocation = findViewById(R.id.drawLocation);
+           Paint paint = new Paint();
+        //  drawView.setBackgroundColor(Color.BLACK);
+        //   drawlocation=  drawView;
 
+        // DrawCanvasCircle pcc = new DrawCanvasCircle (this);
+           Bitmap result = Bitmap.createBitmap(120, 80, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(result);
+          paint.setColor(Color.RED);
+          paint.setStrokeWidth(3);
+          canvas.drawRect(0, 0, 50, 50, paint);
+         drawView.draw(canvas);
+
+        // insert into main view
+        //  ViewGroup insertPoint = (ViewGroup) findViewById(R.id.insert_point);
+        //  insertPoint.addView(v, 0, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
+      //  resultatLinearLayout = findViewById(R.id. resultatLinearLayout);
+      //  drawView = new DrawView(this);
+     //   drawView.setLayoutParams(new LinearLayout.LayoutParams(250, 250));
+        resultatLinearLayout.addView(drawView);
+
+        */
+
+        resultatLinearLayout = findViewById(R.id. resultatLinearLayout);
+
+      if (drawView == null ) {
+          drawView = new DrawView(this);
+          drawView.setLayoutParams(new LinearLayout.LayoutParams(240/2, 1320/2));
+          drawView.setBackgroundColor(Color.RED);
+      }
+        drawView.nombre80 = p80;
+        resultatLinearLayout.removeView(drawView);
+        resultatLinearLayout.addView(drawView);
     }
 }
