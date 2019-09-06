@@ -297,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
 
         Remorque remorque = new Remorque();
         remorque.hauteur = 300;
-        remorque.largeur = 240;
+        remorque.largeur = 400;
         remorque.longueur = 1320;
 /*
         setLayoutParams(new ViewGroup.LayoutParams(
@@ -444,23 +444,23 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         resteB = (remorque.longueur - b);
 
          double surfaceInutilisée = 0;
-        double rectangleA = resteA * 1.2;//on divise direct 120 par 100 par soucis de simplicité
-        double rectangleB = resteB * 1.2;
+        double rectangleA = resteA * remorque.largeur/2;//on divise direct 120 par 100 par soucis de simplicité
+        double rectangleB = resteB * remorque.largeur/2;
         if(rectangleA >= 0){
             surfaceInutilisée = rectangleA;
         }
 
         if(rectangleB >= 0){
-            surfaceInutilisée = surfaceInutilisée + rectangleB;
+            surfaceInutilisée = (surfaceInutilisée + rectangleB)/100;
         }
-
+        double surfaceRemorque = (remorque.longueur*remorque.largeur)/100;
         System.out.println("                                                        ");
         System.out.println("Rang A : " + a /100 +"    Reste : " +resteA/100);
         System.out.println("Rang B : " + b/100 +"    Reste : "+resteB/100);
         resultat = findViewById(R.id.resultat);
         resultat.setText("Rang A : " + a /100 +"    Reste : " +resteA/100  +"\n" +
                 "Rang B : " + b /100 +"    Reste : "+resteB/100  +"\n" +
-                        "Surface inutilisée : " +  surfaceInutilisée/100 +" "
+                        "Surface inutilisée : " +  surfaceInutilisée/100 +"/"+ surfaceRemorque/100+""
                 );
 
             //refacto :
