@@ -40,6 +40,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean autorisationForcerCasserUnRang80;
     private boolean autorisationRotation100Seulle = false;
 
+    private TextInputEditText casser80120NombreTextInput;
+    private TextInputEditText casser100120NombreTextInput;
+
     //
     private ToggleButton switchAutorisationRangBatard80;
     private ToggleButton switchAutoriserRotation100SiPossibleDeFaireUnRang;
@@ -112,6 +115,50 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
+                calculer();
+            }
+        });
+
+
+
+        casser80120NombreTextInput = findViewById(R.id.casser80120nombre);
+        casser80120NombreTextInput.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int st, int b, int c) {
+
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
+                calculer();
+            }
+        });
+
+        casser100120NombreTextInput = findViewById(R.id.casser100120nombre);
+        casser100120NombreTextInput.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int st, int b, int c) {
+
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
                 calculer();
             }
         });
@@ -297,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
 
         Remorque remorque = new Remorque();
         remorque.hauteur = 300;
-        remorque.largeur = 400;
+        remorque.largeur = 240;
         remorque.longueur = 1320;
 /*
         setLayoutParams(new ViewGroup.LayoutParams(
@@ -398,16 +445,36 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Rang> listeP100RangComplet2 = new ArrayList<Rang>();
         //ArrayList<Rang> listeRangMixte = new ArrayList<Rang>();
 
+
+
+        //80 par 3
         int orientationRang80Par3 = 0;
         int p80RangComplet3 = (listeP80.size()-(listeP80.size() % EnLongueur80))/EnLongueur80;
-        if(autorisationForcerCasserUnRang80 == true){p80RangComplet3 = p80RangComplet3 - 1;}
+        int casser80120Nombre =0;
+        try {
+        casser80120Nombre = Integer.parseInt(casser80120NombreTextInput.getText().toString());
+        }catch(Exception e){}
+        if(casser80120Nombre > p80RangComplet3){
+            casser80120Nombre = p80RangComplet3;
+        }
+        if(autorisationForcerCasserUnRang80 == true){
+            p80RangComplet3 = p80RangComplet3 - casser80120Nombre;
+        }
         int longueurOccupéeParLesRangsComplets80Par3 =  faireRang(listeP80, p80RangComplet3, EnLongueur80,listeP80RangComplet3, orientationRang80Par3);
 
+
+
+        //80 par 2
         int orientationRang80Par2 = 1;
         int p80RangComplet2 = (listeP80.size()-(listeP80.size() % EnLargeur80))/EnLargeur80;
-        if(autorisationRangBatard80 == true){p80RangComplet2 = p80RangComplet2 -1;}
+        if(autorisationRangBatard80 == true){
+            p80RangComplet2 = p80RangComplet2 -1;
+        }
         int longueurOccupéeParLesRangsComplets80Par2 = faireRang(listeP80, p80RangComplet2, EnLargeur80,listeP80RangComplet2, orientationRang80Par2);
 
+
+
+        //100 120 par 2
         int orientationRang100Par2 = 1;
         int p100RangComplet2 = (listeP100.size()-(listeP100.size() % EnLargeur100))/EnLargeur100;
         int longueurOccupéeParLesRangsComplets100Par2 = faireRang(listeP100, p100RangComplet2, EnLargeur100,listeP100RangComplet2, orientationRang100Par2);
@@ -451,8 +518,9 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         }
 
         if(rectangleB >= 0){
-            surfaceInutilisée = (surfaceInutilisée + rectangleB)/100;
+            surfaceInutilisée = (surfaceInutilisée + rectangleB);
         }
+        surfaceInutilisée = surfaceInutilisée/100;
         double surfaceRemorque = (remorque.longueur*remorque.largeur)/100;
         System.out.println("                                                        ");
         System.out.println("Rang A : " + a /100 +"    Reste : " +resteA/100);
