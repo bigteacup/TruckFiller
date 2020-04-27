@@ -485,6 +485,11 @@ public class MainActivity extends AppCompatActivity {
         int longueurTotaleOccupée = longueurOccupéeParLesRangsComplets80Par3 + longueurOccupéeParLesRangsComplets80Par2 + longueurOccupéeParLesRangsComplets100Par2;
         tableauResultat = placerLesPalettesRestantes(listeP80, listeP100, longueurTotaleOccupée, remorque.longueur );
 
+        //faire un liste des listes pour simplifier les manupulations
+        ArrayList<ArrayList<Rang>> listeDesListesDeRangComplets = new ArrayList<ArrayList<Rang>>();
+        listeDesListesDeRangComplets.add(listeP100RangComplet2);
+        listeDesListesDeRangComplets.add(listeP80RangComplet3);
+        listeDesListesDeRangComplets.add(listeP80RangComplet2);
 /*
 
 int surfaceDeRangComplets = (longueurOccupéeParLesRangsComplets80Par3 + longueurOccupéeParLesRangsComplets80Par2 + longueurOccupéeParLesRangsComplets100Par2)* remorque.largeur;
@@ -492,8 +497,9 @@ int surfaceDeRangComplets = (longueurOccupéeParLesRangsComplets80Par3 + longueu
 surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResultat.get(1) *1.2);
 
 */
-
-
+        //Partie texte/resultats
+//on compte les palettes qui ne passent pas dans la remorque pour information
+        int[] debordementPalette = compterLesPalettesQuiNePassentPas(listeDesListesDeRangComplets, listeP80, listeP100, remorque);
 
         double resteA = 0;
         double resteB = 0;
@@ -528,7 +534,9 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         resultat = findViewById(R.id.resultat);
         resultat.setText("Rang A : " + a /100 +"    Reste : " +resteA/100  +"\n" +
                 "Rang B : " + b /100 +"    Reste : "+resteB/100  +"\n" +
-                        "Surface inutilisée : " +  surfaceInutilisée/100 +"/"+ surfaceRemorque/100+""
+                        "Surface inutilisée : " +  surfaceInutilisée/100 +"/"+ surfaceRemorque/100 +"\n" +
+               debordementPalette[0] +" P80 débordent" +"\n" +
+                        debordementPalette[1] +" P100 débordent"
                 );
 
             //refacto :
@@ -540,10 +548,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         drawView.longueurOccupéeParLesRangsComplets80Par2 = longueurOccupéeParLesRangsComplets80Par2;
         drawView.longueurOccupéeParLesRangsComplets100Par2 = longueurOccupéeParLesRangsComplets100Par2;
 
-        ArrayList<ArrayList<Rang>> listeDesListesDeRangComplets = new ArrayList<ArrayList<Rang>>();
-        listeDesListesDeRangComplets.add(listeP100RangComplet2);
-        listeDesListesDeRangComplets.add(listeP80RangComplet3);
-        listeDesListesDeRangComplets.add(listeP80RangComplet2);
+
          drawView.listeDesListesDeRangComplets = listeDesListesDeRangComplets;
 
         drawView.listeP80 = listeP80;
@@ -579,4 +584,81 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         drawPosRemorque.removeView(drawView);
         drawPosRemorque.addView(drawView);
     }
+
+
+
+
+
+
+
+
+
+
+    public int[] compterLesPalettesQuiNePassentPas(ArrayList<ArrayList<Rang>> listeDesListesDeRangComplets, ArrayList<Palette> listeP80, ArrayList<Palette> listeP100, Remorque remorque){
+        // tableau de comptage premier element pour les 80, second element pour les 100
+        int t[]= {0,0};
+
+        int longueurOccupée = 0;
+        int positionDeFin = 0;
+      //  positionDeFin = longueurOccupée + pal.positionYb;
+
+
+        for(int i=0; i < listeDesListesDeRangComplets.size(); i++){
+            longueurOccupée = positionDeFin;
+
+        for(Rang r : listeDesListesDeRangComplets.get(i)){
+            for(Palette p : r.listePaletteDuRang){
+                if(p.positionX > remorque.longueur || p.positionXb  > remorque.longueur || longueurOccupée + p.positionY  > remorque.longueur || longueurOccupée + p.positionYb > remorque.longueur ){
+                  if(p.getLargeur()==80){
+                    t[0] = t[0] + 1;
+                  }
+                    if(p.getLargeur()==100){
+                        t[1] = t[1] + 1;
+                    }
+
+                }
+                positionDeFin = longueurOccupée + p.positionYb;
+            }
+
+        }
+        }
+
+        longueurOccupée = positionDeFin;//on pense à noter la derniere prise de valeur
+        //on passe les liste de palettes restantes
+
+
+        for(Palette p : listeP80){
+            if(p.positionX > remorque.longueur || p.positionXb > remorque.longueur || longueurOccupée +p.positionY > remorque.longueur || longueurOccupée +p.positionYb > remorque.longueur ){
+                if(p.getLargeur()==80){
+                    t[0] = t[0] + 1;
+                }
+                if(p.getLargeur()==100){
+                    t[1] = t[1] + 1;
+                }
+
+            }
+        }
+
+        for(Palette p : listeP100){
+            if(p.positionX > remorque.longueur || p.positionXb > remorque.longueur || longueurOccupée +p.positionY > remorque.longueur || longueurOccupée +p.positionYb > remorque.longueur ){
+                if(p.getLargeur()==80){
+                    t[0] = t[0] + 1;
+                }
+                if(p.getLargeur()==100){
+                    t[1] = t[1] + 1;
+                }
+
+            }
+        }
+
+        return t;
+    }
+
+
+
+
+
+
+
+
 }
