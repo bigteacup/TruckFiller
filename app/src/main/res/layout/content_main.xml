@@ -11,7 +11,8 @@
     <ScrollView
         android:id="@+id/scrollViewContenu"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/cblue">
 
         <LinearLayout
             android:id="@+id/linearLayoutContenu"
@@ -34,7 +35,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:isScrollContainer="true"
-                    android:orientation="vertical" />
+                    android:orientation="vertical"
+                    android:paddingLeft="25px" />
             </ScrollView>
 
             <LinearLayout
@@ -62,12 +64,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:background="@android:color/transparent"
+                        android:background="#9D9D9D"
                         android:clickable="false"
                         android:ems="10"
                         android:enabled="false"
                         android:focusable="false"
                         android:inputType="none"
+                        android:minHeight="112dip"
                         android:singleLine="false"
                         android:textColor="@color/colorPrimaryDark" />
 
@@ -88,8 +91,10 @@
                             android:id="@+id/nombre80120"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:background="@color/cbrownp"
                             android:hint="80*120"
                             android:inputType="number|numberDecimal"
+                            android:maxLength="3"
                             android:paddingTop="0dp"
                             android:selectAllOnFocus="true" />
 
@@ -147,9 +152,11 @@
                         <android.support.design.widget.TextInputEditText
                             android:id="@+id/nombre100120"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
+                            android:background="@color/cgreen"
                             android:hint="100*120"
                             android:inputType="number|numberDecimal"
+                            android:maxLength="3"
                             android:paddingTop="0dp"
                             android:selectAllOnFocus="true" />
                     </android.support.design.widget.TextInputLayout>

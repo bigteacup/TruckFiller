@@ -376,7 +376,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (drawView == null ) {
             drawView = new DrawView(this);
-            int sizeX =  (int) (remorque.largeur / agrandissement) +25;
+            int sizeX =  (int) (remorque.largeur / agrandissement) +20; // +3
             int sizeY =  (int) (remorque.longueur / agrandissement) +145;
             drawView.setLayoutParams(new LinearLayout.LayoutParams( sizeX, sizeY)); //     ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT
             drawView.setBackgroundColor(Color.WHITE);
