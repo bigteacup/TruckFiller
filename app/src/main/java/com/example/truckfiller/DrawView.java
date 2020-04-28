@@ -69,16 +69,16 @@ public class DrawView extends View {
 
                     paint2.setColor(Color.WHITE);
                     paint.setStrokeWidth(0);
-                    canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (pal.positionXb / coef), (longueurOccupée + pal.positionYb) / coef, paint);
+                    canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (pal.positionXb / coef), ( pal.positionYb) / coef, paint);
                     paint.setColor(Color.WHITE);
-                    canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (pal.positionXb) / coef, (3 + longueurOccupée + pal.positionY) / coef, paint); // horizontale haute
-                    canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (3 + pal.positionX) / coef, (longueurOccupée + pal.positionYb) / coef, paint);   //verticale gauche
+                    canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (pal.positionXb) / coef, (3 +  pal.positionY) / coef, paint); // horizontale haute
+                    canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (3 + pal.positionX) / coef, ( pal.positionYb) / coef, paint);   //verticale gauche
                     //Numero de palette
                     paint.setColor(Color.WHITE);
                     paint.setTextSize(30);
-                    canvas.drawText(String.valueOf(pal.id), margeGauche +10 + (pal.positionX ) / coef   , 35 + (longueurOccupée + pal.positionY) / coef , paint);
+                    canvas.drawText(String.valueOf(pal.id), margeGauche +10 + (pal.positionX ) / coef   , 35 + ( pal.positionY) / coef , paint);
 
-                    positionDeFin = longueurOccupée + pal.positionYb;
+                    positionDeFin =  pal.positionYb;
                 }
             }
         }
@@ -93,15 +93,15 @@ public class DrawView extends View {
 
             paint2.setColor(Color.WHITE);
             paint.setStrokeWidth(0);
-            canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (pal.positionXb / coef), (longueurOccupée + pal.positionYb) / coef, paint);
+            canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (pal.positionXb / coef), ( pal.positionYb) / coef, paint);
             paint.setColor(Color.WHITE);
-            canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (pal.positionXb) / coef, (3 + longueurOccupée + pal.positionY) / coef, paint); // horizontale haute
-            canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (3 + pal.positionX) / coef, (longueurOccupée + pal.positionYb) / coef, paint);   //verticale gauche
-          //  positionDeFin = longueurOccupée + pal.positionYb;
+            canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (pal.positionXb) / coef, (3 +  pal.positionY) / coef, paint); // horizontale haute
+            canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (3 + pal.positionX) / coef, ( pal.positionYb) / coef, paint);   //verticale gauche
+          //  positionDeFin =  pal.positionYb;
             //Numero de palette
             paint.setColor(Color.WHITE);
             paint.setTextSize(30);
-            canvas.drawText(String.valueOf(pal.id), margeGauche +10+ (pal.positionX ) / coef   ,  35+ (longueurOccupée + pal.positionY) / coef , paint);
+            canvas.drawText(String.valueOf(pal.id), margeGauche +10+ (pal.positionX ) / coef   ,  35+ ( pal.positionY) / coef , paint);
         }
         for (Palette pal : listeP100) {
             if(pal.largeur == 80){
@@ -112,17 +112,17 @@ public class DrawView extends View {
 
             paint2.setColor(Color.WHITE);
             paint.setStrokeWidth(0);
-            canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (pal.positionXb / coef), (longueurOccupée + pal.positionYb) / coef, paint);
+            canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (pal.positionXb / coef), ( pal.positionYb) / coef, paint);
             paint.setColor(Color.WHITE);
-            canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (pal.positionXb) / coef, (3 + longueurOccupée + pal.positionY) / coef, paint); // horizontale haute
-            canvas.drawRect(margeGauche + (pal.positionX / coef), (longueurOccupée + pal.positionY) / coef, margeGauche + (3 + pal.positionX) / coef, (longueurOccupée + pal.positionYb) / coef, paint);   //verticale gauche
+            canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (pal.positionXb) / coef, (3 +  pal.positionY) / coef, paint); // horizontale haute
+            canvas.drawRect(margeGauche + (pal.positionX / coef), ( pal.positionY) / coef, margeGauche + (3 + pal.positionX) / coef, ( pal.positionYb) / coef, paint);   //verticale gauche
             //Numero de palette
             paint.setColor(Color.WHITE);
             paint.setTextSize(30);
-            canvas.drawText(String.valueOf(pal.id), margeGauche+10 + (pal.positionX ) / coef   , 35 + (longueurOccupée + pal.positionY) / coef , paint);
+            canvas.drawText(String.valueOf(pal.id), margeGauche+10 + (pal.positionX ) / coef   , 35 + ( pal.positionY) / coef , paint);
 
 
-          //  positionDeFin = longueurOccupée + pal.positionYb;
+          //  positionDeFin =  pal.positionYb;
         }
         paintDebordement.setColor(Color.RED);
         paintDebordement.setAlpha(100);
@@ -130,7 +130,7 @@ public class DrawView extends View {
         //paintDebordement.setStrokeJoin(Paint.Join.ROUND);
         //paintDebordement.setStrokeMiter(10);
        // paintDebordement.setStrokeWidth(12);
-        canvas.drawRect(margeGauche -10 , remorque.longueur/ coef, margeGauche + 10 + remorque.largeur/ coef, remorque.longueur/ coef + 330, paintDebordement);
+        canvas.drawRect(margeGauche -25  , remorque.longueur/ coef, margeGauche + 25 + remorque.largeur/ coef, remorque.longueur/ coef + 330, paintDebordement);
     }
 public void testim(){
 

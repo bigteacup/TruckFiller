@@ -57,6 +57,21 @@ public class MainActivity extends AppCompatActivity {
     boolean gaucheOuBas = false;
     DrawView drawView;
     float agrandissement = 1.5f;
+    Remorque remorque;
+
+
+
+
+    ArrayList<Palette> listeP80 = new ArrayList<>();
+    ArrayList<Palette> listeP100 = new ArrayList<>();
+    ArrayList<Rang> listeP80RangComplet3 = new ArrayList<Rang>();
+    ArrayList<Rang> listeP80RangComplet2 = new ArrayList<Rang>();
+    ArrayList<Rang> listeP100RangComplet2 = new ArrayList<Rang>();
+    //ArrayList<Rang> listeRangMixte = new ArrayList<Rang>();
+    ArrayList<ArrayList<Rang>> listeDesListesDeRangComplets = new ArrayList<ArrayList<Rang>>();
+
+
+
 
 
     @Override
@@ -67,6 +82,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
+
+
 
 
         final FloatingActionButton fab = findViewById(R.id.fab);
@@ -217,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        creerRemorque();
     }
 
     private void switcherEtat(boolean etat) {
@@ -246,7 +265,8 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public int faireRang(ArrayList<Palette> listePalette, int nombreDeRangsPossible, int NombreDEmplacements,  ArrayList<Rang> listeDeRangComplet, int orientation) {
+    public int faireRang(ArrayList<Palette> listePalette, int nombreDeRangsPossible, int NombreDEmplacements,  ArrayList<Rang> listeDeRangComplet, int orientation, int longueurOccupeeParLesRangsPrecededants) {
+        listeDeRangComplet.clear();
         int longeurDuGroupeDeRangs = 0;
         int iY = 0;
         int longueurLargeurSelonOrientation = 0;
@@ -260,13 +280,13 @@ public class MainActivity extends AppCompatActivity {
                 pal.orientation = orientation;
                 if(pal.orientation == 0) {
                     pal.positionX = iX * pal.largeur;
-                    pal.positionY = iY * pal.longueur;
+                    pal.positionY = iY * pal.longueur + longueurOccupeeParLesRangsPrecededants;
                     pal.positionXb = pal.positionX + pal.largeur;
-                    pal.positionYb = pal.positionY + pal.longueur;
+                    pal.positionYb = pal.positionY +  pal.longueur;
                     longueurLargeurSelonOrientation = pal.longueur;
                 }else {
                     pal.positionX = iX * pal.longueur ;
-                    pal.positionY = iY * pal.largeur;
+                    pal.positionY = iY * pal.largeur + longueurOccupeeParLesRangsPrecededants;
                     pal.positionXb = pal.positionX + pal.longueur;
                     pal.positionYb = pal.positionY + pal.largeur;
                     longueurLargeurSelonOrientation = pal.largeur;
@@ -288,44 +308,44 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    public ArrayList<Integer> placerLesPalettesRestantes(ArrayList<Palette> listeP80, ArrayList<Palette> listeP100, int longueurOccupée, int longueurRemorque){
-    ArrayList<Integer> resultat = new ArrayList<Integer>();
-    int a = 0;
-    int b = 0;
-    if(listeP80.size() > 0){
+    public ArrayList<Integer> placerLesPalettesRestantes(ArrayList<Palette> listeP80, ArrayList<Palette> listeP100, int longueurOccupeeParLesRangsPrecededants, int longueurRemorque){
+        ArrayList<Integer> resultat = new ArrayList<Integer>();
+        int a = 0;
+        int b = 0;
+        if(listeP80.size() > 0){
 
             listeP80.get(0).positionX = 0 ;
-            listeP80.get(0).positionY = 0 ; //longueurOccupée
-            listeP80.get(0).positionXb = listeP80.get(0).longueur;
-            listeP80.get(0).positionYb = listeP80.get(0).largeur;
-            a = a + listeP80.get(0).positionYb;
+            listeP80.get(0).positionY = 0  + longueurOccupeeParLesRangsPrecededants ; //longueurOccupée
+            listeP80.get(0).positionXb = listeP80.get(0).longueur ;
+            listeP80.get(0).positionYb = listeP80.get(0).largeur + longueurOccupeeParLesRangsPrecededants;
+            a = a + listeP80.get(0).positionYb - longueurOccupeeParLesRangsPrecededants;
 
             if(listeP80.size() > 1) {
                 listeP80.get(1).positionX = 0;
-                listeP80.get(1).positionY = listeP80.get(1).largeur; //longueurOccupée
+                listeP80.get(1).positionY = listeP80.get(1).largeur + longueurOccupeeParLesRangsPrecededants ; //longueurOccupée
                 listeP80.get(1).positionXb = listeP80.get(1).longueur;
-                listeP80.get(1).positionYb = listeP80.get(1).largeur + listeP80.get(0).largeur;
-                a = a + listeP80.get(1).positionYb - listeP80.get(0).largeur;
+                listeP80.get(1).positionYb = listeP80.get(1).largeur + listeP80.get(0).largeur+ longueurOccupeeParLesRangsPrecededants;
+                a = a + listeP80.get(1).positionYb - listeP80.get(0).largeur - longueurOccupeeParLesRangsPrecededants;
             }
         }
         if( listeP100.size() > 0 && listeP80.size() <= 2){
             listeP100.get(0).positionX = 120 ;
-            listeP100.get(0).positionY = 0 ; //longueurOccupée
+            listeP100.get(0).positionY = 0 + longueurOccupeeParLesRangsPrecededants ; //longueurOccupée
             listeP100.get(0).positionXb = listeP100.get(0).longueur + listeP100.get(0).positionX  ;
-            listeP100.get(0).positionYb = listeP100.get(0).largeur;
-            b = b + listeP100.get(0).positionYb;
+            listeP100.get(0).positionYb = listeP100.get(0).largeur + longueurOccupeeParLesRangsPrecededants;
+            b = b + listeP100.get(0).positionYb - longueurOccupeeParLesRangsPrecededants;
         }else if( listeP100.size() > 0) {
             listeP100.get(0).positionX = 120 ;
-            listeP100.get(0).positionY = 0 ; //longueurOccupée
+            listeP100.get(0).positionY = 0 + longueurOccupeeParLesRangsPrecededants ; //longueurOccupée
             listeP100.get(0).positionXb = listeP100.get(0).longueur + listeP100.get(0).positionX  ;
-            listeP100.get(0).positionYb = listeP100.get(0).largeur ;
-            b = b + listeP100.get(0).positionYb;
+            listeP100.get(0).positionYb = listeP100.get(0).largeur + longueurOccupeeParLesRangsPrecededants;
+            b = b + listeP100.get(0).positionYb - longueurOccupeeParLesRangsPrecededants ;
         }
         if(listeP80.size() > 2) {
             listeP80.get(2).positionX = 120;
-            listeP80.get(2).positionY = b ; //longueurOccupée
-            listeP80.get(2).positionXb = listeP80.get(2).longueur *2;
-            listeP80.get(2).positionYb = listeP80.get(2).largeur + b ;
+            listeP80.get(2).positionY = b + longueurOccupeeParLesRangsPrecededants  ; //longueurOccupée
+            listeP80.get(2).positionXb = listeP80.get(2).longueur *2  ;
+            listeP80.get(2).positionYb = listeP80.get(2).largeur + b + longueurOccupeeParLesRangsPrecededants ;
             b = b + listeP80.get(2).largeur;
         }
         resultat.add(0,a);
@@ -337,31 +357,111 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private void calculer(){    ///  à factoriser etc
+
+
+
+
+
+
+
+    //on fait un affichage au demarrage et on prepare les parametres de la remorque.
+    private void creerRemorque(){
+        remorque = null;
         drawPosRemorque = findViewById(R.id. drawPosRemorque);
-
-
-
-        Remorque remorque = new Remorque();
+        remorque = new Remorque();
         remorque.hauteur = 300;
         remorque.largeur = 240;
         remorque.longueur = 1320;
-/*
-        setLayoutParams(new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
-        */
+
+
         if (drawView == null ) {
             drawView = new DrawView(this);
             int sizeX =  (int) (remorque.largeur / agrandissement) +25;
-            int sizeY =  (int) (remorque.longueur / agrandissement) +25;
+            int sizeY =  (int) (remorque.longueur / agrandissement) +145;
             drawView.setLayoutParams(new LinearLayout.LayoutParams( sizeX, sizeY)); //     ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT
             drawView.setBackgroundColor(Color.WHITE);
         }
 
 
-        ArrayList<Palette> listeP80 = new ArrayList<>();
-        ArrayList<Palette> listeP100 = new ArrayList<>();
+
+
+        linearLayoutContenu = findViewById(R.id.linearLayoutContenu);
+        scrollViewRemorque = findViewById(R.id.scrollViewRemorque);
+        scrollViewContenu = findViewById(R.id.scrollViewContenu);
+        linearLayoutA =  findViewById(R.id.linearLayoutA);
+
+        if (remorque.largeur > 360){
+            gaucheOuBas = true ;   // false = gauche true = bas
+        }else{
+            gaucheOuBas = false; // false = gauche true = bas
+        }
+
+        if (gaucheOuBas == true){
+            linearLayoutContenu.removeView(scrollViewRemorque);
+            if(scrollViewRemorque.getParent() != null) {
+                ((ViewGroup)scrollViewRemorque.getParent()).removeView(scrollViewRemorque); // <- fix
+            }
+            linearLayoutA.addView(scrollViewRemorque, linearLayoutA.getChildCount());
+        }else{
+            linearLayoutA.removeView(scrollViewRemorque);
+            if(scrollViewRemorque.getParent() != null) {
+                ((ViewGroup)scrollViewRemorque.getParent()).removeView(scrollViewRemorque); // <- fix
+            }
+            linearLayoutContenu.addView(scrollViewRemorque, 0);
+        }
+
+
+        drawView.listeP80RangComplet3 = listeP80RangComplet3;
+        drawView.listeP80RangComplet2 = listeP80RangComplet2;
+        drawView.listeP100RangComplet2 = listeP100RangComplet2;
+
+        drawView.longueurOccupéeParLesRangsComplets80Par3 = 0;
+        drawView.longueurOccupéeParLesRangsComplets80Par2 = 0;
+        drawView.longueurOccupéeParLesRangsComplets100Par2 = 0;
+
+
+        drawView.listeDesListesDeRangComplets = listeDesListesDeRangComplets;
+
+        drawView.listeP80 = listeP80;
+        drawView.listeP100 = listeP100;
+        drawView.remorque = remorque;
+        drawView.agrandissement = agrandissement;
+
+
+        drawPosRemorque.removeView(drawView);
+        drawPosRemorque.addView(drawView);
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void calculer(){    ///  à factoriser etc
+        drawPosRemorque = findViewById(R.id. drawPosRemorque);
+        drawPosRemorque.removeView(drawView);
+
+
+
+/*
+        setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        */
+
+
+
+
         listeP80.clear();
         listeP100.clear();
 
@@ -427,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }catch(Exception e){EnLargeur80 = 1;}
-            try {
+        try {
             EnLargeur100 = remorque.largeur / listeP100.get(0).longueur;
             if ((EnLargeur100 * listeP100.get(0).longueur) % EnLargeur100 == 0) {
                 System.out.println("P100 : la longueur autorise des rangs complets de : " + EnLargeur100);
@@ -440,11 +540,13 @@ public class MainActivity extends AppCompatActivity {
 
 
         //peupler les rangs
-        ArrayList<Rang> listeP80RangComplet3 = new ArrayList<Rang>();
-        ArrayList<Rang> listeP80RangComplet2 = new ArrayList<Rang>();
-        ArrayList<Rang> listeP100RangComplet2 = new ArrayList<Rang>();
-        //ArrayList<Rang> listeRangMixte = new ArrayList<Rang>();
 
+
+
+        //100 120 par 2
+        int orientationRang100Par2 = 1;
+        int p100RangComplet2 = (listeP100.size()-(listeP100.size() % EnLargeur100))/EnLargeur100;
+        int longueurOccupéeParLesRangsComplets100Par2 = faireRang(listeP100, p100RangComplet2, EnLargeur100,listeP100RangComplet2, orientationRang100Par2, 0);
 
 
         //80 par 3
@@ -452,7 +554,7 @@ public class MainActivity extends AppCompatActivity {
         int p80RangComplet3 = (listeP80.size()-(listeP80.size() % EnLongueur80))/EnLongueur80;
         int casser80120Nombre =0;
         try {
-        casser80120Nombre = Integer.parseInt(casser80120NombreTextInput.getText().toString());
+            casser80120Nombre = Integer.parseInt(casser80120NombreTextInput.getText().toString());
         }catch(Exception e){}
         if(casser80120Nombre > p80RangComplet3){
             casser80120Nombre = p80RangComplet3;
@@ -460,7 +562,7 @@ public class MainActivity extends AppCompatActivity {
         if(autorisationForcerCasserUnRang80 == true){
             p80RangComplet3 = p80RangComplet3 - casser80120Nombre;
         }
-        int longueurOccupéeParLesRangsComplets80Par3 =  faireRang(listeP80, p80RangComplet3, EnLongueur80,listeP80RangComplet3, orientationRang80Par3);
+        int longueurOccupéeParLesRangsComplets80Par3 =  faireRang(listeP80, p80RangComplet3, EnLongueur80,listeP80RangComplet3, orientationRang80Par3, longueurOccupéeParLesRangsComplets100Par2);
 
 
 
@@ -470,14 +572,10 @@ public class MainActivity extends AppCompatActivity {
         if(autorisationRangBatard80 == true){
             p80RangComplet2 = p80RangComplet2 -1;
         }
-        int longueurOccupéeParLesRangsComplets80Par2 = faireRang(listeP80, p80RangComplet2, EnLargeur80,listeP80RangComplet2, orientationRang80Par2);
+        int longueurOccupéeParLesRangsComplets80Par2 = faireRang(listeP80, p80RangComplet2, EnLargeur80,listeP80RangComplet2, orientationRang80Par2, longueurOccupéeParLesRangsComplets100Par2 + longueurOccupéeParLesRangsComplets80Par3);
 
 
 
-        //100 120 par 2
-        int orientationRang100Par2 = 1;
-        int p100RangComplet2 = (listeP100.size()-(listeP100.size() % EnLargeur100))/EnLargeur100;
-        int longueurOccupéeParLesRangsComplets100Par2 = faireRang(listeP100, p100RangComplet2, EnLargeur100,listeP100RangComplet2, orientationRang100Par2);
 
         // faire rang batard avec les reste de 80 et de 100
         // faireRang(listeP100, p100RangComplet2, p100Rang2,listeP100RangComplet2);
@@ -486,7 +584,7 @@ public class MainActivity extends AppCompatActivity {
         tableauResultat = placerLesPalettesRestantes(listeP80, listeP100, longueurTotaleOccupée, remorque.longueur );
 
         //faire un liste des listes pour simplifier les manupulations
-        ArrayList<ArrayList<Rang>> listeDesListesDeRangComplets = new ArrayList<ArrayList<Rang>>();
+        listeDesListesDeRangComplets.clear();
         listeDesListesDeRangComplets.add(listeP100RangComplet2);
         listeDesListesDeRangComplets.add(listeP80RangComplet3);
         listeDesListesDeRangComplets.add(listeP80RangComplet2);
@@ -507,7 +605,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         double a = longueurTotaleOccupée + tableauResultat.get(0);
         double b = longueurTotaleOccupée + tableauResultat.get(1);
         double surfacestr = (p80*(120*80))+(p100*(120*100));
-      //  double surfaceRestantestr = 3168 - surfacestr;
+        //  double surfaceRestantestr = 3168 - surfacestr;
         /*
         BigDecimal bd = new BigDecimal(surfaceRestantestr);
         bd = bd.setScale(3,BigDecimal.ROUND_CEILING);
@@ -516,7 +614,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         resteA = (remorque.longueur - a);
         resteB = (remorque.longueur - b);
 
-         double surfaceInutilisée = 0;
+        double surfaceInutilisée = 0;
         double rectangleA = resteA * remorque.largeur/2;//on divise direct 120 par 100 par soucis de simplicité
         double rectangleB = resteB * remorque.largeur/2;
         if(rectangleA >= 0){
@@ -534,12 +632,12 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         resultat = findViewById(R.id.resultat);
         resultat.setText("Rang A : " + a /100 +"    Reste : " +resteA/100  +"\n" +
                 "Rang B : " + b /100 +"    Reste : "+resteB/100  +"\n" +
-                        "Surface inutilisée : " +  surfaceInutilisée/100 +"/"+ surfaceRemorque/100 +"\n" +
-               debordementPalette[0] +" P80 débordent" +"\n" +
-                        debordementPalette[1] +" P100 débordent"
-                );
+                "Surface inutilisée : " +  surfaceInutilisée/100 +"/"+ surfaceRemorque/100 +"\n" +
+                debordementPalette[0] +" P80 à quai" +"\n" +
+                debordementPalette[1] +" P100 à quai"
+        );
 
-            //refacto :
+        //refacto :
         drawView.listeP80RangComplet3 = listeP80RangComplet3;
         drawView.listeP80RangComplet2 = listeP80RangComplet2;
         drawView.listeP100RangComplet2 = listeP100RangComplet2;
@@ -549,40 +647,14 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         drawView.longueurOccupéeParLesRangsComplets100Par2 = longueurOccupéeParLesRangsComplets100Par2;
 
 
-         drawView.listeDesListesDeRangComplets = listeDesListesDeRangComplets;
+        drawView.listeDesListesDeRangComplets = listeDesListesDeRangComplets;
 
         drawView.listeP80 = listeP80;
         drawView.listeP100 = listeP100;
-        drawView.remorque = remorque;
-        drawView.agrandissement = agrandissement;
-
-        linearLayoutContenu = findViewById(R.id.linearLayoutContenu);
-        scrollViewRemorque = findViewById(R.id.scrollViewRemorque);
-        scrollViewContenu = findViewById(R.id.scrollViewContenu);
-        linearLayoutA =  findViewById(R.id.linearLayoutA);
-
-        if (remorque.largeur > 360){
-            gaucheOuBas = true ;   // false = gauche true = bas
-        }else{
-            gaucheOuBas = false; // false = gauche true = bas
-        }
-
-        if (gaucheOuBas == true){
-                       linearLayoutContenu.removeView(scrollViewRemorque);
-            if(scrollViewRemorque.getParent() != null) {
-                ((ViewGroup)scrollViewRemorque.getParent()).removeView(scrollViewRemorque); // <- fix
-            }
-            linearLayoutA.addView(scrollViewRemorque, linearLayoutA.getChildCount());
-        }else{
-            linearLayoutA.removeView(scrollViewRemorque);
-            if(scrollViewRemorque.getParent() != null) {
-                ((ViewGroup)scrollViewRemorque.getParent()).removeView(scrollViewRemorque); // <- fix
-            }
-            linearLayoutContenu.addView(scrollViewRemorque, 0);
-        }
 
         drawPosRemorque.removeView(drawView);
         drawPosRemorque.addView(drawView);
+
     }
 
 
@@ -598,37 +670,37 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         // tableau de comptage premier element pour les 80, second element pour les 100
         int t[]= {0,0};
 
-        int longueurOccupée = 0;
-        int positionDeFin = 0;
-      //  positionDeFin = longueurOccupée + pal.positionYb;
+        //   int longueurOccupée = 0;
+        //   int positionDeFin = 0;
+        //  positionDeFin = longueurOccupée + pal.positionYb;
 
 
         for(int i=0; i < listeDesListesDeRangComplets.size(); i++){
-            longueurOccupée = positionDeFin;
+            //    longueurOccupée = positionDeFin;
 
-        for(Rang r : listeDesListesDeRangComplets.get(i)){
-            for(Palette p : r.listePaletteDuRang){
-                if(p.positionX > remorque.longueur || p.positionXb  > remorque.longueur || longueurOccupée + p.positionY  > remorque.longueur || longueurOccupée + p.positionYb > remorque.longueur ){
-                  if(p.getLargeur()==80){
-                    t[0] = t[0] + 1;
-                  }
-                    if(p.getLargeur()==100){
-                        t[1] = t[1] + 1;
+            for(Rang r : listeDesListesDeRangComplets.get(i)){
+                for(Palette p : r.listePaletteDuRang){
+                    if(p.positionX > remorque.longueur || p.positionXb  > remorque.longueur ||  p.positionY  > remorque.longueur ||  p.positionYb > remorque.longueur ){
+                        if(p.getLargeur()==80){
+                            t[0] = t[0] + 1;
+                        }
+                        if(p.getLargeur()==100){
+                            t[1] = t[1] + 1;
+                        }
+
                     }
-
+                    //   positionDeFin = longueurOccupée + p.positionYb;
                 }
-                positionDeFin = longueurOccupée + p.positionYb;
+
             }
-
-        }
         }
 
-        longueurOccupée = positionDeFin;//on pense à noter la derniere prise de valeur
+        // longueurOccupée = positionDeFin;//on pense à noter la derniere prise de valeur
         //on passe les liste de palettes restantes
 
 
         for(Palette p : listeP80){
-            if(p.positionX > remorque.longueur || p.positionXb > remorque.longueur || longueurOccupée +p.positionY > remorque.longueur || longueurOccupée +p.positionYb > remorque.longueur ){
+            if(p.positionX > remorque.longueur || p.positionXb > remorque.longueur || p.positionY > remorque.longueur || p.positionYb > remorque.longueur ){
                 if(p.getLargeur()==80){
                     t[0] = t[0] + 1;
                 }
@@ -640,7 +712,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         }
 
         for(Palette p : listeP100){
-            if(p.positionX > remorque.longueur || p.positionXb > remorque.longueur || longueurOccupée +p.positionY > remorque.longueur || longueurOccupée +p.positionYb > remorque.longueur ){
+            if(p.positionX > remorque.longueur || p.positionXb > remorque.longueur || p.positionY > remorque.longueur || p.positionYb > remorque.longueur ){
                 if(p.getLargeur()==80){
                     t[0] = t[0] + 1;
                 }

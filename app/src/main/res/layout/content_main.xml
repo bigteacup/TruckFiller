@@ -112,7 +112,10 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:inputType="number|numberDecimal"
-                                android:selectAllOnFocus="true" />
+                                android:selectAllOnFocus="true"
+                                android:textOff="Rang Droit"
+                                android:textOn="Shifted"
+                                android:textSize="8sp" />
 
                             <ToggleButton
                                 android:id="@+id/forcerCasserUnRang80"
@@ -204,7 +207,8 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:hint="Casser 80*120"
-                                android:inputType="number|numberDecimal" />
+                                android:inputType="number|numberDecimal"
+                                android:text="1" />
                         </android.support.design.widget.TextInputLayout>
                     </LinearLayout>
 
