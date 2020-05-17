@@ -122,7 +122,8 @@ public class DrawView extends View {
 
 
         /////////////////////////////ancienne version
-        if (oldVersion) {
+        else  {
+
             finRang80 = 0;
             finRang100 = 0;
             longueurOccupée = 0;

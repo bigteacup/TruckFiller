@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Switch;
 import android.widget.ToggleButton;
 
 import java.math.BigDecimal;
@@ -68,7 +69,9 @@ public class MainActivity extends AppCompatActivity {
     private ScrollView scrollViewRemorque;
     private LinearLayout linearLayoutContenu;
     private ScrollView scrollViewContenu;
-    boolean oldmode =false;
+    boolean oldmode =true;
+    private Switch switchDevMode ;
+
 
 
     @Override
@@ -318,6 +321,31 @@ public class MainActivity extends AppCompatActivity {
                 //rien
             }
         });
+
+
+
+        switchDevMode = findViewById(R.id.oldModetid);
+        switchDevMode.setChecked(false);
+        switchDevMode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //   switcherEtat(switchAutoriserRotation80.isChecked());
+                if (oldmode == true) {
+                    oldmode = false;
+
+                    switchDevMode.setChecked(true);
+                } else {
+                    oldmode = true;
+                    switchDevMode.setChecked(false);
+                }
+                if(oldmode){
+                    creerRemorque(1320, 240, 300);
+                    calculer();
+                }else{
+                    creerRemorque(1320, 240, 300);
+                    calculer2();}
+            }
+        });
         //taille par defaut
         creerRemorque(1320, 240, 300);
 
@@ -536,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void calculer2() {
         drawPosRemorque = findViewById(R.id.drawPosRemorque);
-        drawPosRemorque.removeView(drawView);
+        //drawPosRemorque.removeView(drawView);
         listeP80.clear();
         listeP100.clear();
 

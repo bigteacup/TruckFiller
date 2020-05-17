@@ -23,14 +23,14 @@
                 android:layout_weight="1">
 
                 <Switch
-                    android:id="@+id/chargementid"
+                    android:id="@+id/oldModetid"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Chargement"
+                    android:text="DevMod"
                     android:textColor="#FAF9F9"
-                    android:textOff="Chargement tournée"
-                    android:textOn="Chargement simple"
+                    android:textOff="DevMod"
+                    android:textOn="OldMod"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
