@@ -1,6 +1,13 @@
 package com.example.truckfiller;
 
 public class Palette {
+    public boolean rangLongueur = false;
+    public boolean rangLargeur = false;
+    public boolean rangBatardLongueurLongueur = false;
+    public boolean rangBatardLongueurLargeur = false;
+    public boolean rangBatardLargeurLongueur = false;
+    public boolean rangBatardLargeurLargeur = false;
+
     int id;
     int largeur = 0;
     int longueur = 0;
@@ -12,9 +19,21 @@ public class Palette {
     int positionXb = 0;
     int positionYb = 0;
     int surface = 0;
+    int orientationFavorite = 0;
+
+
+    public int getOrientationFavorite() {
+        return orientationFavorite;
+    }
+
+    public void setOrientationFavorite(int orientationFavorite) {
+        this.orientationFavorite = orientationFavorite;
+    }
+
+
 
     public int getSurface() {
-        surface = largeur * hauteur;
+        surface = largeur * longueur;
         return surface;
     }
 
@@ -68,6 +87,13 @@ public class Palette {
 
     public void setOrientation(int orientation) {
         this.orientation = orientation;
+        if(orientation == 0) {
+            this.positionXb = positionX+largeur;
+            this.positionYb = positionY+longueur;
+        }else{
+            this.positionXb = positionX+longueur;
+            this.positionYb = positionY+largeur;
+        }
     }
 
     public int getPositionX() {
@@ -76,6 +102,7 @@ public class Palette {
 
     public void setPositionX(int positionX) {
         this.positionX = positionX;
+
     }
 
     public int getPositionY() {

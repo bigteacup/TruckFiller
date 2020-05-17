@@ -59,6 +59,41 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
 
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal">
+
+                        <android.support.design.widget.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <android.support.design.widget.TextInputEditText
+                                android:id="@+id/longueurremorqueid"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Longueur"
+                                android:inputType="number"
+                                android:text="1320" />
+                        </android.support.design.widget.TextInputLayout>
+
+                        <android.support.design.widget.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <android.support.design.widget.TextInputEditText
+                                android:id="@+id/largeurremorqueid"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Largeur"
+                                android:inputType="number"
+                                android:text="240" />
+                        </android.support.design.widget.TextInputLayout>
+                    </LinearLayout>
+
                     <EditText
                         android:id="@+id/resultat"
                         android:layout_width="match_parent"
