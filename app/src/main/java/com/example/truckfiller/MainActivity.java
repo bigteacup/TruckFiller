@@ -69,15 +69,14 @@ public class MainActivity extends AppCompatActivity {
     private ScrollView scrollViewRemorque;
     private LinearLayout linearLayoutContenu;
     private ScrollView scrollViewContenu;
-    boolean oldmode =true;
+    boolean oldMode =true;
     private Switch switchDevMode ;
 
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-
+        drawView = new DrawView(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //   Toolbar toolbar = findViewById(R.id.toolbar);
@@ -123,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 creerRemorque(longueur, largeur, hauteur);
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                 calculer2();}
@@ -159,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 creerRemorque(longueur, largeur, hauteur);
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -184,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -206,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -231,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -255,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -275,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                     autorisationForcerCasserUnRang80 = true;
                     switchForcerCasserUnRang80.setChecked(true);
                 }
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -306,7 +305,7 @@ public class MainActivity extends AppCompatActivity {
                     autorisationRangBatard80 = true;
                     switchAutorisationRangBatard80.setChecked(true);
                 }
-                if(oldmode){
+                if(oldMode){
                     calculer();
                 }else{
                     calculer2();}
@@ -330,21 +329,22 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //   switcherEtat(switchAutoriserRotation80.isChecked());
-                if (oldmode == true) {
-                    oldmode = false;
-
+                if (oldMode == true) {
+                    oldMode = false;
+                    drawView.oldMode = false;
                     switchDevMode.setChecked(true);
                 } else {
-                    oldmode = true;
+                    oldMode = true;
+                    drawView.oldMode = true;
                     switchDevMode.setChecked(false);
                 }
-                if(oldmode){
+                if(oldMode){
                     creerRemorque(1320, 240, 300);
-                    calculer();
+                   calculer();
                 }else{
                     creerRemorque(1320, 240, 300);
                     calculer2();}
-            }
+           }
         });
         //taille par defaut
         creerRemorque(1320, 240, 300);
@@ -500,9 +500,9 @@ public class MainActivity extends AppCompatActivity {
         remorque.longueur = longueur;
 
 
-        if (drawView == null) {
-            drawView = new DrawView(this);
-        }
+       // if (drawView == null) {
+        //    drawView = new DrawView(this);
+       // }
         int sizeX = (int) (remorque.largeur / agrandissement) + 20; // +3
         int sizeY = (int) (remorque.longueur / agrandissement) + 145;
         drawView.setLayoutParams(new LinearLayout.LayoutParams(sizeX, sizeY)); //     ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT

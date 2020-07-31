@@ -24,7 +24,7 @@ public class DrawView extends View {
     double resteB;
     boolean decalerUne80SurRangB = false;
 
-    boolean oldVersion = true;
+    boolean oldMode = true;
     float agrandissement = 0;
     Remorque remorque;
 
@@ -57,7 +57,7 @@ public class DrawView extends View {
 
     @Override
     public void onDraw(Canvas canvas) {
-    if(oldVersion == false){
+    if(oldMode == false){
 
          finRang80 = 0;
          finRang100 = 0;
