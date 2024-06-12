@@ -51,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
     private TextInputEditText nombre100120;
     private TextInputEditText poidPalet;
     private TextInputEditText piecesParColis;
+    private TextInputEditText tailleEnCmInput;
+    private TextInputEditText nombreDeSeparations;
     private EditText resultat;
     //palettes hors rangs complet
     private ToggleButton switchForcerCasserUnRang80;
@@ -261,6 +263,53 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        tailleEnCmInput = findViewById(R.id.tailleencm);
+        tailleEnCmInput .addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int st, int b, int c) {
+
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
+                if(oldMode){
+                    calculer();
+                }else{
+                    calculer2();}
+            }
+        });
+        nombreDeSeparations = findViewById(R.id.nombredeseparations);
+        nombreDeSeparations .addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int st, int b, int c) {
+
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
+                if(oldMode){
+                    calculer();
+                }else{
+                    calculer2();}
+            }
+        });
+
         switchForcerCasserUnRang80 = findViewById(R.id.forcerCasserUnRang80);
         switchForcerCasserUnRang80.setChecked(false);
         switchForcerCasserUnRang80.setOnClickListener(new View.OnClickListener() {
@@ -400,11 +449,37 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+
+
+
+    public int decalageBarresDeSeparation (){
+        ///// barres de separations  ///////////////////////////////
+        int nombreDeSeparationsInt = 0;
+        try {
+            nombreDeSeparationsInt = Integer.parseInt(nombreDeSeparations.getText().toString());
+        } catch (Exception e) {
+            nombreDeSeparationsInt = 0;
+        }
+        int tailleEnCmInt = 0;
+        try {
+            tailleEnCmInt = Integer.parseInt(tailleEnCmInput.getText().toString());
+        } catch (Exception e) {
+            tailleEnCmInt = 0;
+        }
+        int decalageBarresDeSeparation =0;
+        decalageBarresDeSeparation = nombreDeSeparationsInt*tailleEnCmInt;
+        return decalageBarresDeSeparation;
+    }
+
+
+
+
     public int faireRang(ArrayList<Palette> listePalette, int nombreDeRangsPossible, int NombreDEmplacements, ArrayList<Rang> listeDeRangComplet, int orientation, int longueurOccupeeParLesRangsPrecededants) {
         listeDeRangComplet.clear();
         int longeurDuGroupeDeRangs = 0;
         int iY = 0;
         int longueurLargeurSelonOrientation = 0;
+        longueurOccupeeParLesRangsPrecededants = longueurOccupeeParLesRangsPrecededants + decalageBarresDeSeparation();
         while (listeDeRangComplet.size() < nombreDeRangsPossible) {
             Rang rang = new Rang();
             rang.idDuRang = rang.idDuRang + 1;
@@ -444,6 +519,7 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Integer> resultat = new ArrayList<Integer>();
         int a = 0;
         int b = 0;
+        longueurOccupeeParLesRangsPrecededants = longueurOccupeeParLesRangsPrecededants + decalageBarresDeSeparation();
         if (listeP80.size() > 0) {
 
             listeP80.get(0).positionX = 0;
@@ -1152,6 +1228,7 @@ public class MainActivity extends AppCompatActivity {
         // faire rang batard avec les reste de 80 et de 100
         // faireRang(listeP100, p100RangComplet2, p100Rang2,listeP100RangComplet2);
         ArrayList<Integer> tableauResultat = new ArrayList<Integer>();
+
         int longueurTotaleOccupée = longueurOccupéeParLesRangsComplets80Par3 + longueurOccupéeParLesRangsComplets80Par2 + longueurOccupéeParLesRangsComplets100Par2 + longueurOccupéeParLesRangsComplets100Par3;
         tableauResultat = placerLesPalettesRestantes(listeP80, listeP100, longueurTotaleOccupée, remorque.longueur);
 
@@ -1161,6 +1238,9 @@ public class MainActivity extends AppCompatActivity {
         listeDesListesDeRangComplets.add(listeP100RangComplet2);
         listeDesListesDeRangComplets.add(listeP80RangComplet3);
         listeDesListesDeRangComplets.add(listeP80RangComplet2);
+
+
+
 /*
 
 int surfaceDeRangComplets = (longueurOccupéeParLesRangsComplets80Par3 + longueurOccupéeParLesRangsComplets80Par2 + longueurOccupéeParLesRangsComplets100Par2)* remorque.largeur;
@@ -1174,8 +1254,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
         double resteA = 0;
         double resteB = 0;
-
-        double a = longueurTotaleOccupée + tableauResultat.get(0);
+        longueurTotaleOccupée = longueurTotaleOccupée + decalageBarresDeSeparation();
+        double a =  longueurTotaleOccupée + tableauResultat.get(0);
         double b = longueurTotaleOccupée + tableauResultat.get(1);
         double surfacestr = (p80 * (120 * 80)) + (p100 * (120 * 100));
         //  double surfaceRestantestr = 3168 - surfacestr;
@@ -1211,6 +1291,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         );
 
         //refacto :
+
         drawView.listeP100RangComplet3 = listeP100RangComplet3;
         drawView.listeP80RangComplet3 = listeP80RangComplet3;
         drawView.listeP80RangComplet2 = listeP80RangComplet2;

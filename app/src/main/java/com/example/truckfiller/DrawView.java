@@ -38,10 +38,12 @@ public class DrawView extends View {
     ArrayList<Palette> listeDePalettesPosees;
 
 
+
     int longueurOccupéeParLesRangsComplets80Par3;
     int longueurOccupéeParLesRangsComplets80Par2;
     int longueurOccupéeParLesRangsComplets100Par3;
     int longueurOccupéeParLesRangsComplets100Par2;
+
 
     float finRang80 = 0;
     float finRang100 = 0;
