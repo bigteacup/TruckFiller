@@ -1,5 +1,7 @@
 package com.example.truckfiller;
 
+import android.os.Bundle;
+
 public class Palette {
     public boolean rangLongueur = false;
     public boolean rangLargeur = false;
@@ -21,7 +23,9 @@ public class Palette {
     int surface = 0;
     int orientationFavorite = 0;
 
+    protected void onCreate(Bundle savedInstanceState) {
 
+        }
     public int getOrientationFavorite() {
         return orientationFavorite;
     }

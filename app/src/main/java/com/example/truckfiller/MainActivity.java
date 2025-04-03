@@ -1,17 +1,11 @@
 package com.example.truckfiller;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -24,11 +18,8 @@ import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.ToggleButton;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -56,11 +47,12 @@ public class MainActivity extends AppCompatActivity {
     private EditText resultat;
     //palettes hors rangs complet
     private ToggleButton switchForcerCasserUnRang80;
+    private ToggleButton switchForcerRotation100;
     private ToggleButton switchAutoriserRotation100Seulle;
     private boolean autorisationForcerCasserUnRang80;
-    private boolean autorisationRotation100Seulle = false;
+    private boolean autorisationForcerRotation100;
     private TextInputEditText casser80120NombreTextInput;
-    private TextInputEditText casser100120NombreTextInput;
+    private TextInputEditText focerRotation100120NombreTextInput;
     //
     private ToggleButton switchAutorisationRangBatard80;
     private ToggleButton switchAutoriserRotation100SiPossibleDeFaireUnRang;
@@ -71,9 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private ScrollView scrollViewRemorque;
     private LinearLayout linearLayoutContenu;
     private ScrollView scrollViewContenu;
-    boolean oldMode =true;
-    private Switch switchDevMode ;
-
+    boolean oldMode = true;
+    private Switch switchDevMode;
 
 
     @Override
@@ -124,10 +115,11 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 creerRemorque(longueur, largeur, hauteur);
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
@@ -160,10 +152,11 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 creerRemorque(longueur, largeur, hauteur);
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
@@ -185,10 +178,11 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
@@ -207,10 +201,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
@@ -232,15 +227,16 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
-        casser100120NombreTextInput = findViewById(R.id.casser100120nombre);
-        casser100120NombreTextInput.addTextChangedListener(new TextWatcher() {
+        focerRotation100120NombreTextInput = findViewById(R.id.rotation100120nombre);
+        focerRotation100120NombreTextInput.addTextChangedListener(new TextWatcher() {
 
             @Override
             public void onTextChanged(CharSequence s, int st, int b, int c) {
@@ -256,15 +252,16 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
         tailleEnCmInput = findViewById(R.id.tailleencm);
-        tailleEnCmInput .addTextChangedListener(new TextWatcher() {
+        tailleEnCmInput.addTextChangedListener(new TextWatcher() {
 
             @Override
             public void onTextChanged(CharSequence s, int st, int b, int c) {
@@ -280,14 +277,15 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
         nombreDeSeparations = findViewById(R.id.nombredeseparations);
-        nombreDeSeparations .addTextChangedListener(new TextWatcher() {
+        nombreDeSeparations.addTextChangedListener(new TextWatcher() {
 
             @Override
             public void onTextChanged(CharSequence s, int st, int b, int c) {
@@ -303,12 +301,14 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
 
 
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
+
 
         switchForcerCasserUnRang80 = findViewById(R.id.forcerCasserUnRang80);
         switchForcerCasserUnRang80.setChecked(false);
@@ -323,19 +323,31 @@ public class MainActivity extends AppCompatActivity {
                     autorisationForcerCasserUnRang80 = true;
                     switchForcerCasserUnRang80.setChecked(true);
                 }
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
-        switchAutoriserRotation100Seulle = findViewById(R.id.autoriserRotation100Seulle);
-        switchAutoriserRotation100Seulle.setChecked(true);
-        switchAutoriserRotation100Seulle.setOnClickListener(new View.OnClickListener() {
+        switchForcerRotation100 = findViewById(R.id.forcerRotation100);
+        switchForcerRotation100.setChecked(false);
+        switchForcerRotation100.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //rien
+                if (autorisationForcerRotation100 == true) {
+                    autorisationForcerRotation100 = false;
+                    switchForcerRotation100.setChecked(false);
+                } else {
+                    autorisationForcerRotation100 = true;
+                    switchForcerRotation100.setChecked(true);
+                }
+                if (oldMode) {
+                    calculer();
+                } else {
+                    calculer2();
+                }
             }
         });
 
@@ -354,10 +366,11 @@ public class MainActivity extends AppCompatActivity {
                     autorisationRangBatard80 = true;
                     switchAutorisationRangBatard80.setChecked(true);
                 }
-                if(oldMode){
+                if (oldMode) {
                     calculer();
-                }else{
-                    calculer2();}
+                } else {
+                    calculer2();
+                }
             }
         });
 
@@ -369,7 +382,6 @@ public class MainActivity extends AppCompatActivity {
                 //rien
             }
         });
-
 
 
         switchDevMode = findViewById(R.id.oldModetid);
@@ -387,40 +399,20 @@ public class MainActivity extends AppCompatActivity {
                     drawView.oldMode = true;
                     switchDevMode.setChecked(false);
                 }
-                if(oldMode){
-                    creerRemorque(1320, 240, 300);
-                   calculer();
-                }else{
-                    creerRemorque(1320, 240, 300);
-                    calculer2();}
-           }
+                if (oldMode) {
+                   // creerRemorque(1320, 240, 300);
+                    calculer();
+                } else {
+                  //  creerRemorque(1320, 240, 300);
+                    calculer2();
+                }
+            }
         });
         //taille par defaut
         creerRemorque(1320, 240, 300);
 
 
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     private void switcherEtat(boolean etat) {
@@ -450,9 +442,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
-    public int decalageBarresDeSeparation (){
+    public int decalageBarresDeSeparation() {
         ///// barres de separations  ///////////////////////////////
         int nombreDeSeparationsInt = 0;
         try {
@@ -466,12 +456,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             tailleEnCmInt = 0;
         }
-        int decalageBarresDeSeparation =0;
-        decalageBarresDeSeparation = nombreDeSeparationsInt*tailleEnCmInt;
+        int decalageBarresDeSeparation = 0;
+        decalageBarresDeSeparation = nombreDeSeparationsInt * tailleEnCmInt;
         return decalageBarresDeSeparation;
     }
-
-
 
 
     public int faireRang(ArrayList<Palette> listePalette, int nombreDeRangsPossible, int NombreDEmplacements, ArrayList<Rang> listeDeRangComplet, int orientation, int longueurOccupeeParLesRangsPrecededants) {
@@ -576,9 +564,9 @@ public class MainActivity extends AppCompatActivity {
         remorque.longueur = longueur;
 
 
-       // if (drawView == null) {
+        // if (drawView == null) {
         //    drawView = new DrawView(this);
-       // }
+        // }
         int sizeX = (int) (remorque.largeur / agrandissement) + 20; // +3
         int sizeY = (int) (remorque.longueur / agrandissement) + 145;
         drawView.setLayoutParams(new LinearLayout.LayoutParams(sizeX, sizeY)); //     ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT
@@ -640,7 +628,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void calculer2() {
         drawPosRemorque = findViewById(R.id.drawPosRemorque);
-        //drawPosRemorque.removeView(drawView);
+
         listeP80.clear();
         listeP100.clear();
 
@@ -648,27 +636,31 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
 
 
+                final ArrayList<Palette> listeDePalettesPosees = new ArrayList<>();
+
+                int p80 = 0;
+                int p100 = 0;
+
+                try {
+                    p80 = Integer.parseInt(nombre80120.getText().toString());
+                } catch (Exception e) {
+                    p80 = 0;
+                }
+                try {
+                    p100 = Integer.parseInt(nombre100120.getText().toString());
+                } catch (Exception e) {
+                    p100 = 0;
+                }
 
 
 
-       final  ArrayList<Palette> listeDePalettesPosees = new ArrayList<>();
-
-        int p80 = 0;
-        int p100 = 0;
-
-        try {
-            p80 = Integer.parseInt(nombre80120.getText().toString());
-        } catch (Exception e) {
-            p80 = 0;
-        }
-        try {
-            p100 = Integer.parseInt(nombre100120.getText().toString());
-        } catch (Exception e) {
-            p100 = 0;
-        }
-
-
-
+                int nombreDe100ForceeEnRotation =0;
+                //drawPosRemorque.removeView(drawView);
+                try {
+                    if (autorisationForcerRotation100 == true) {
+                        nombreDe100ForceeEnRotation = Integer.parseInt(focerRotation100120NombreTextInput.getText().toString());
+                    }
+                }catch (Exception e){}
 
 ///////////////////////Template
                 Palette item1 = new Palette();
@@ -676,57 +668,60 @@ public class MainActivity extends AppCompatActivity {
                 item1.largeur = 100;
 
                 Palette item2 = new Palette();
-                item1.longueur = 120;
-                item1.largeur = 80;
+                item2.longueur = 120;
+                item2.largeur = 80;
                 //templates possibles rangs droits
                 try {
-                 item1 = listeP100.get(0);
-                if (remorque.largeur % item1.getLargeur() == 0){
-                    //rang parfait possible en longueur
-                    item1.rangLongueur = true;
+                    item1 = listeP100.get(0);
+                    if (remorque.largeur % item1.getLargeur() == 0) {
+                        //rang parfait possible en longueur
+                        item1.rangLongueur = true;
+                    }
+                    if (remorque.largeur % item1.getLongueur() == 0) {
+                        //rang parfait possible en largeur
+                        item1.rangLargeur = true;
+                    }
+                } catch (Exception e) {
                 }
-                if(remorque.largeur % item1.getLongueur() == 0){
-                    //rang parfait possible en largeur
-                    item1.rangLargeur = true;
-                }
-                }catch(Exception e){}
                 try {
-                 item2 = listeP80.get(0);
-                if (remorque.largeur % item2.getLargeur() == 0){
-                    //rang parfait possible en longueur
-                    item2.rangLongueur = true;
+                    item2 = listeP80.get(0);
+                    if (remorque.largeur % item2.getLargeur() == 0) {
+                        //rang parfait possible en longueur
+                        item2.rangLongueur = true;
+                    }
+                    if (remorque.largeur % item2.getLongueur() == 0) {
+                        //rang parfait possible en largeur
+                        item2.rangLargeur = true;
+                    }
+                } catch (Exception e) {
                 }
-                if(remorque.largeur % item2.getLongueur() == 0){
-                    //rang parfait possible en largeur
-                    item2.rangLargeur = true;
-                }
-                }catch(Exception e){}
                 //batard////////////////////////////////////////// @ doubler ?
-                try {
-                int reste = remorque.largeur - item1.getLargeur();
-                if (reste % item2.getLargeur() == 0){
-                    //rang parfait batard possible en longueur
-                    item2.rangBatardLongueurLongueur = true;
-                    item1.rangBatardLongueurLongueur = true;
-                }
-                if(reste % item2.getLongueur() == 0){
-                    //rang parfait batard possible en largeur
-                    item2.rangBatardLongueurLargeur = true;
-                    item1.rangBatardLongueurLargeur = true;
-                }
+               try {
+                    int reste = remorque.largeur - item1.getLargeur();
+                    if (reste % item2.getLargeur() == 0) {
+                        //rang parfait batard possible en longueur
+                        item2.rangBatardLongueurLongueur = true;
+                        item1.rangBatardLongueurLongueur = true;
+                    }
+                    if (reste % item2.getLongueur() == 0) {
+                        //rang parfait batard possible en largeur
+                        item2.rangBatardLongueurLargeur = true;
+                        item1.rangBatardLongueurLargeur = true;
+                    }
 
-               reste = remorque.largeur - item1.getLongueur();
-                if (reste % item2.getLargeur() == 0){
-                    //rang parfait batard possible en longueur
-                    item2.rangBatardLargeurLongueur = true;
-                    item1.rangBatardLargeurLongueur = true;
+                    reste = remorque.largeur - item1.getLongueur();
+                    if (reste % item2.getLargeur() == 0) {
+                        //rang parfait batard possible en longueur
+                        item2.rangBatardLargeurLongueur = true;
+                        item1.rangBatardLargeurLongueur = true;
+                    }
+                    if (reste % item2.getLongueur() == 0) {
+                        //rang parfait batard possible en largeur
+                        item2.rangBatardLargeurLargeur = true;
+                        item1.rangBatardLargeurLargeur = true;
+                    }
+                } catch (Exception e) {
                 }
-                if(reste % item2.getLongueur() == 0){
-                    //rang parfait batard possible en largeur
-                    item2.rangBatardLargeurLargeur = true;
-                    item1.rangBatardLargeurLargeur = true;
-                }
-            }catch(Exception e){}
 
 
 // on applique ajout des palettes
@@ -743,7 +738,6 @@ public class MainActivity extends AppCompatActivity {
                     p.rangBatardLargeurLongueur = item2.rangBatardLargeurLongueur;
                     p.rangBatardLongueurLargeur = item2.rangBatardLongueurLargeur;
                     p.rangBatardLongueurLongueur = item2.rangBatardLongueurLongueur;
-
 
 
                     listeP80.add(p);
@@ -765,34 +759,33 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
+                //faire une liste avec les deux listes
+                ArrayList<Palette> listeDePalettesAPoser = new ArrayList<>();
+                ArrayList<ArrayList<Palette>> listeDesListesDePalettesAPoser = new ArrayList<>();
 
-        //faire une liste avec les deux listes
-        ArrayList<Palette> listeDePalettesAPoser = new ArrayList<>();
-        ArrayList<ArrayList<Palette>> listeDesListesDePalettesAPoser = new ArrayList<>();
-
-        listeDesListesDePalettesAPoser.add(listeP100);
-        listeDesListesDePalettesAPoser.add(listeP80);
+                listeDesListesDePalettesAPoser.add(listeP100);
+                listeDesListesDePalettesAPoser.add(listeP80);
 
 
-        for (Palette p : listeP80) {
-            listeDePalettesAPoser.add(p);
-        }
+                for (Palette p : listeP80) {
+                    listeDePalettesAPoser.add(p);
+                }
 
-        for (Palette p : listeP100) {
-            listeDePalettesAPoser.add(p);
-        }
+                for (Palette p : listeP100) {
+                    listeDePalettesAPoser.add(p);
+                }
 
-        //onteste
-        double moduloAc =0;
-        double moduloBc =0;
+                //onteste
+                double moduloAc = 0;
+                double moduloBc = 0;
 
-        boolean reverse= false;
-        int compteX = 0;
-        int compteY = 0;
-        int f=0;
-        int e=0;
-        boolean continuer = true;
-           //     while(continuer == true) {
+                boolean reverse = false;
+                int compteX = 0;
+                int compteY = 0;
+                int f = 0;
+                int e = 0;
+                boolean continuer = true;
+                //     while(continuer == true) {
 /*              Palette p = new  Palette();
 
 //on place
@@ -812,122 +805,39 @@ public class MainActivity extends AppCompatActivity {
 
                 //Pour chaque palette on tente un posistionnement
                 // on fais une new Arraylist pour eviter les conccurent ecxeptions : devra etre remplacépar un controle au lancment du calcul
-        for (ArrayList<Palette> listeEncours : new ArrayList<ArrayList<Palette>> (listeDesListesDePalettesAPoser)) {
+                for (ArrayList<Palette> listeEncours : new ArrayList<ArrayList<Palette>>(listeDesListesDePalettesAPoser)) {
 
 
-            for (Palette p : new ArrayList<Palette>(listeEncours)) {
-                boolean palettePosee = false;
+                    for (Palette p : new ArrayList<Palette>(listeEncours)) {
+                        boolean palettePosee = false;
 
 
-
-                    for(int iY=0 + e; iY < remorque.longueur; iY = iY + 20 ) {
-                        if(palettePosee == true){
-                            break;
-                        }
-                        for (int iX = 0 + f; iX < remorque.largeur; iX = iX + 20) {
-                            int   orientation = 0;
-                            p.setPositionX(iX);
-                            p.setPositionY(iY);
-
-
-
-                            //[objectif RANG] orientation en fonction d'un multiple de la largeur de la remorque et d'une dimension de la palette
-                         double   moduloA = (remorque.largeur -iX) % p.getLargeur();
-                         double   moduloB = (remorque.largeur -iX) % p.getLongueur();
-                            if( moduloA == 0 || p.getOrientationFavorite() == 0 ) {
-                                //orientation //&& moduloA >= moduloB
-                                orientation = 0;
-                            }else if( moduloB == 0){
-                                orientation= 1;
-                            }
-
-
-
-
-
-
-
-                            p.setOrientation(orientation);
-                            // si la position selectionnée ne cause pas de superposition avec une autre palette et de depasse pas du container
-                            if(estSuperposeAUnAutre(listeDePalettesPosees, p) == false && p.getPositionXb() <= remorque.largeur && p.getPositionYb() <= remorque.longueur ){ //&& p.getPositionYb() <= remorque.longueur
-
-                                ////////////////////////////////////chercheur d'obstacle vers la droite
-                                int incrementPointeur = 20;  //doit etre inferieur ou egal à lecart minimum possible du fait de l'agencement possible des palettes
-                                boolean obstacleTrouve = false;
-                                for(int xl = p.getPositionX(); xl < remorque.largeur; xl = xl + incrementPointeur  ){
-                                    Palette pointeur = new Palette();
-                                    pointeur.setLargeur(80);
-                                    pointeur.setLongueur(120);
-                                    pointeur.setPositionX(xl);
-                                    pointeur.setPositionY(iY);
-                                    pointeur.setOrientation(0);
-                                    ////on determine la place sur la droite
-                                 int   mesure = xl - incrementPointeur +pointeur.getLargeur();
-                                    if(estSuperposeAUnAutre(listeDePalettesPosees, pointeur) == true || mesure >= remorque.largeur   ){
-
-                                    double     moduloAb = (mesure - iX)  % p.getLargeur();
-                                    double   moduloBb = (mesure - iX) % p.getLongueur();
-                                        if( moduloAb == 0  ) {
-                                            orientation = 0;
-                                        }else if( moduloBb == 0){
-                                            orientation= 1;
-                                        }else if (moduloAb < moduloBb){
-                                            orientation = 0;
-                                        }else {
-                                            orientation = 1;
-                                        }
-                                        obstacleTrouve = true;
-                                        break;
-                                    }
-
-
-                                }
-
-                                ////////////////////////////////////chercheur d'obstacle vers la gauche
-                                //debranché noptimase pas la place ou tres peu
-                                 incrementPointeur = 1;  //doit etre inferieur ou egal à lecart minimum possible du fait de l'agencement possible des palettes
-                                    boolean videAAGauche = false;
-                                for(int xl = p.getPositionX()-1; xl > 0; xl = xl - incrementPointeur  ){
-                                    Palette pointeurGauche =new Palette();
-                                    pointeurGauche.setLargeur(1);
-                                    pointeurGauche.setLongueur(120);
-                                    pointeurGauche.setPositionX(xl);
-                                    pointeurGauche.setPositionY(p.getLargeur()+p.getPositionY() -1);
-                                    pointeurGauche.setOrientation(0);
-                                    ////on determine la place sur la gauche
-                                  int  mesure = xl - incrementPointeur +pointeurGauche.getLargeur();
-                                    if(estSuperposeAUnAutre(listeDePalettesPosees, pointeurGauche) == true || mesure <= 0   ){
-                                        break;
-
-                                    }else{
-                                      //  videAAGauche = true;
-                                        break; // a faire :prendre la mesure au lieu de break
-                                    }
-
-
-                                }
-
-
-
-
-                                if (videAAGauche == false) {
-                                    p.setOrientation(orientation);
-                                    listeDePalettesPosees.add(p);
-                                    //   p.setOrientation(orientation); //recalcule les positions de la palette
-                                    palettePosee = true;
-                                }
+                        for (int iY = 0 + e; iY < remorque.longueur; iY = iY + 20) {
+                            if (palettePosee == true) {
                                 break;
+                            }
+                            for (int iX = 0 + f; iX < remorque.largeur; iX = iX + 20) {
+                                int orientation = 0;
+                                p.setPositionX(iX);
+                                p.setPositionY(iY);
 
-                            }else {
-                               // s'il y a superposition on tourne la palette et on retente
-                                if(p.getOrientation() == 1){
-                                    p.setOrientation(0);
-                                }else {
-                                    p.setOrientation(1);
+
+                                //[objectif RANG] orientation en fonction d'un multiple de la largeur de la remorque et d'une dimension de la palette
+                                double moduloA = (remorque.largeur - iX) % p.getLargeur();
+                                double moduloB = (remorque.largeur - iX) % p.getLongueur();
+                                if (moduloA == 0 || p.getOrientationFavorite() == 0) {
+                                    //orientation //&& moduloA >= moduloB
+                                    orientation = 0;
+                                } else if (moduloB == 0) {
+                                    orientation = 1;
                                 }
-                                if(estSuperposeAUnAutre(listeDePalettesPosees, p) == false && p.getPositionXb() <= remorque.largeur && p.getPositionYb() <= remorque.longueur ) { //&& p.getPositionYb() <= remorque.longueur
 
-                                    //chercheur d'obstacle vers la droite
+
+                                p.setOrientation(orientation);
+                                // si la position selectionnée ne cause pas de superposition avec une autre palette et de depasse pas du container
+                                if (estSuperposeAUnAutre(listeDePalettesPosees, p) == false && p.getPositionXb() <= remorque.largeur && p.getPositionYb() <= remorque.longueur) { //&& p.getPositionYb() <= remorque.longueur
+
+                                    ////////////////////////////////////chercheur d'obstacle vers la droite
                                     int incrementPointeur = 20;  //doit etre inferieur ou egal à lecart minimum possible du fait de l'agencement possible des palettes
                                     boolean obstacleTrouve = false;
                                     for (int xl = p.getPositionX(); xl < remorque.largeur; xl = xl + incrementPointeur) {
@@ -938,29 +848,103 @@ public class MainActivity extends AppCompatActivity {
                                         pointeur.setPositionY(iY);
                                         pointeur.setOrientation(0);
                                         ////on determine la place sur la droite
-                                        if (estSuperposeAUnAutre(listeDePalettesPosees, pointeur) == true) {
-                                        int     mesure = xl - incrementPointeur + pointeur.getLargeur();
-                                         double    moduloAb = (mesure) % p.getLargeur();
-                                         double    moduloBb = (mesure) % p.getLongueur();
+                                        int mesure = xl - incrementPointeur + pointeur.getLargeur();
+                                        if (estSuperposeAUnAutre(listeDePalettesPosees, pointeur) == true || mesure >= remorque.largeur) {
+
+                                            double moduloAb = (mesure - iX) % p.getLargeur();
+                                            double moduloBb = (mesure - iX) % p.getLongueur();
                                             if (moduloAb == 0) {
                                                 orientation = 0;
                                             } else if (moduloBb == 0) {
                                                 orientation = 1;
+                                            } else if (moduloAb < moduloBb) {
+                                                orientation = 0;
+                                            } else  {
+                                                orientation = 1;
+                                            }
+                                            if (autorisationForcerRotation100 == true && p.getId() % 2 == 0){
+                                                if(nombreDe100ForceeEnRotation > 0){
+                                                    orientation = 0;
+                                                    nombreDe100ForceeEnRotation = nombreDe100ForceeEnRotation-1;
+                                                }
                                             }
                                             obstacleTrouve = true;
                                             break;
                                         }
 
+
+                                    }
+
+                                    ////////////////////////////////////chercheur d'obstacle vers la gauche
+                                    //debranché noptimase pas la place ou tres peu
+                                    incrementPointeur = 1;  //doit etre inferieur ou egal à lecart minimum possible du fait de l'agencement possible des palettes
+                                    boolean videAAGauche = false;
+                                    for (int xl = p.getPositionX() - 1; xl > 0; xl = xl - incrementPointeur) {
+                                        Palette pointeurGauche = new Palette();
+                                        pointeurGauche.setLargeur(1);
+                                        pointeurGauche.setLongueur(120);
+                                        pointeurGauche.setPositionX(xl);
+                                        pointeurGauche.setPositionY(p.getLargeur() + p.getPositionY() - 1);
+                                        pointeurGauche.setOrientation(0);
+                                        ////on determine la place sur la gauche
+                                        int mesure = xl - incrementPointeur + pointeurGauche.getLargeur();
+                                        if (estSuperposeAUnAutre(listeDePalettesPosees, pointeurGauche) == true || mesure <= 0) {
+                                            break;
+
+                                        } else {
+                                            //  videAAGauche = true;
+                                            break; // a faire :prendre la mesure au lieu de break
+                                        }
+
+
                                     }
 
 
+                                    if (videAAGauche == false) {
+                                        p.setOrientation(orientation);
+                                        listeDePalettesPosees.add(p);
+                                        //   p.setOrientation(orientation); //recalcule les positions de la palette
+                                        palettePosee = true;
+                                    }
+                                    break;
+
+                                } else {
+                                    // s'il y a superposition on tourne la palette et on retente
+                                    if (p.getOrientation() == 1) {
+                                        p.setOrientation(0);
+                                    } else {
+                                        p.setOrientation(1);
+                                    }
+                                    if (estSuperposeAUnAutre(listeDePalettesPosees, p) == false && p.getPositionXb() <= remorque.largeur && p.getPositionYb() <= remorque.longueur) { //&& p.getPositionYb() <= remorque.longueur
+
+                                        //chercheur d'obstacle vers la droite
+                                        int incrementPointeur = 20;  //doit etre inferieur ou egal à lecart minimum possible du fait de l'agencement possible des palettes
+                                        boolean obstacleTrouve = false;
+                                        for (int xl = p.getPositionX(); xl < remorque.largeur; xl = xl + incrementPointeur) {
+                                            Palette pointeur = new Palette();
+                                            pointeur.setLargeur(80);
+                                            pointeur.setLongueur(120);
+                                            pointeur.setPositionX(xl);
+                                            pointeur.setPositionY(iY);
+                                            pointeur.setOrientation(0);
+                                            ////on determine la place sur la droite
+                                            if (estSuperposeAUnAutre(listeDePalettesPosees, pointeur) == true) {
+                                                int mesure = xl - incrementPointeur + pointeur.getLargeur();
+                                                double moduloAb = (mesure) % p.getLargeur();
+                                                double moduloBb = (mesure) % p.getLongueur();
+                                                if (moduloAb == 0) {
+                                                    orientation = 0;
+                                                } else if (moduloBb == 0) {
+                                                    orientation = 1;
+                                                }
+                                                obstacleTrouve = true;
+                                                break;
+                                            }
+
+                                        }
 
 
-
-
-
-
-                                   //      p.setOrientation(orientation);
+                                        //      p.setOrientation(orientation);
                                         listeDePalettesPosees.add(p);
                                         //   p.setOrientation(orientation); //recalcule les positions de la palette
                                         palettePosee = true;
@@ -971,55 +955,49 @@ public class MainActivity extends AppCompatActivity {
                                 }
 
 
+                            }
                         }
+
+
                     }
+                }//fin for///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-            }
-            }//fin for///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    //    } //fin while
+                //    } //fin while
 
 
                 runOnUiThread(new Runnable() {
                     public void run() {
 
 
+                        double surfaceUtiliseeA = 0;
+                        for (Palette pp : listeDePalettesPosees) {
+                            surfaceUtiliseeA = surfaceUtiliseeA + pp.getSurface() / 100;
+                        }
+                        final double surfaceUtilisee = surfaceUtiliseeA;
+                        final double surfaceRemorque = (remorque.longueur * remorque.largeur) / 100;
+                        //       System.out.println("                                                        ");
+                        //  System.out.println("Rang A : " + a / 100 + "    Reste : " + resteA / 100);
+                        //   System.out.println("Rang B : " + b / 100 + "    Reste : " + resteB / 100);
 
-        double surfaceUtiliseeA = 0;
-        for(Palette pp : listeDePalettesPosees){
-            surfaceUtiliseeA =  surfaceUtiliseeA + pp.getSurface()/100;
-        }
-        final  double surfaceUtilisee = surfaceUtiliseeA;
-      final  double surfaceRemorque = (remorque.longueur * remorque.largeur) / 100;
- //       System.out.println("                                                        ");
-        //  System.out.println("Rang A : " + a / 100 + "    Reste : " + resteA / 100);
-        //   System.out.println("Rang B : " + b / 100 + "    Reste : " + resteB / 100);
-
-        resultat = findViewById(R.id.resultat);
-        resultat.setText("Rang A : " + 0 / 100 + "    Reste : " + 0 / 100 + "\n" +
-                "Rang B : " + 0 / 100 + "    Reste : " + 0 / 100 + "\n" +
-                "Surface inutilisée : " + ((surfaceRemorque - surfaceUtilisee ) / 100) + "/" + surfaceRemorque / 100 + "\n" +
-                0 + " P80 à quai" + "\n" +
-                0 + " P100 à quai"
-        );
-
+                        resultat = findViewById(R.id.resultat);
+                        resultat.setText("Rang A : " + 0 / 100 + "    Reste : " + 0 / 100 + "\n" +
+                                "Rang B : " + 0 / 100 + "    Reste : " + 0 / 100 + "\n" +
+                                "Surface inutilisée : " + ((surfaceRemorque - surfaceUtilisee) / 100) + "/" + surfaceRemorque / 100 + "\n" +
+                                0 + " P80 à quai" + "\n" +
+                                0 + " P100 à quai"
+                        );
 
 
-
-
-        drawView.listeDePalettesPosees = listeDePalettesPosees;
-        drawView.listeP80 = listeP80;
-        drawView.listeP100 = listeP100;
-        drawPosRemorque.removeView(drawView);
-        drawPosRemorque.addView(drawView);
+                        drawView.listeDePalettesPosees = listeDePalettesPosees;
+                        drawView.listeP80 = listeP80;
+                        drawView.listeP100 = listeP100;
+                        drawPosRemorque.removeView(drawView);
+                        drawPosRemorque.addView(drawView);
 
                     }
                 });
-         /////fin thread
+                /////fin thread
             }
         }).start();
         //////////
@@ -1027,40 +1005,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-//////////////////////////// //detection de superposition      //if (RectA.X1 < RectB.X2 && RectA.X2 > RectB.X1 && RectA.Y1 < RectB.Y2 && RectA.Y2 > RectB.Y1)
-   private boolean estSuperposeAUnAutre(ArrayList<Palette> listeDePalettesPosees, Palette p){
-       boolean resultat = false;
+    //////////////////////////// //detection de superposition      //if (RectA.X1 < RectB.X2 && RectA.X2 > RectB.X1 && RectA.Y1 < RectB.Y2 && RectA.Y2 > RectB.Y1)
+    private boolean estSuperposeAUnAutre(ArrayList<Palette> listeDePalettesPosees, Palette p) {
+        boolean resultat = false;
         for (Palette p1 : listeDePalettesPosees) { //refacto :commencer par la fin de la liste
             if (p1.getPositionX() < p.getPositionXb() && p1.getPositionXb() > p.getPositionX() && p1.getPositionY() < p.getPositionYb() && p1.getPositionYb() > p.getPositionY()) {
-        resultat =true;
-               // System.out.println("P : " + p.getId() + " est superposé à " + p1.getId());
+                resultat = true;
+                // System.out.println("P : " + p.getId() + " est superposé à " + p1.getId());
             }
         }
         return resultat;
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1124,8 +1079,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-  //      System.out.println("P80 : " + listeP80.size());
-  //      System.out.println("P100 : " + listeP100.size());
+        //      System.out.println("P80 : " + listeP80.size());
+        //      System.out.println("P100 : " + listeP100.size());
 
         //trouver des rangs droits possibles
         int EnLongueur80 = 0;
@@ -1137,7 +1092,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             EnLongueur80 = remorque.largeur / listeP80.get(0).largeur;
             if ((EnLongueur80 * listeP80.get(0).largeur) % EnLongueur80 == 0) {
-       //         System.out.println("P80 : la largeur autorise des rangs complets de : " + EnLongueur80);
+                //         System.out.println("P80 : la largeur autorise des rangs complets de : " + EnLongueur80);
 
             }
         } catch (Exception e) {
@@ -1146,7 +1101,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             EnLargeur80 = remorque.largeur / listeP80.get(0).longueur;
             if ((EnLargeur80 * listeP80.get(0).longueur) % EnLargeur80 == 0) {
-       //         System.out.println("P80 : la longueur autorise des rangs complets de : " + EnLargeur80);
+                //         System.out.println("P80 : la longueur autorise des rangs complets de : " + EnLargeur80);
 
             }
         } catch (Exception e) {
@@ -1155,7 +1110,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             EnLongueur100 = remorque.largeur / listeP100.get(0).largeur;
             if ((EnLongueur100 * listeP100.get(0).largeur) % EnLongueur100 == 0) {
-         //       System.out.println("P100 : la largeur autorise des rangs complets de : " + EnLongueur100);
+                //       System.out.println("P100 : la largeur autorise des rangs complets de : " + EnLongueur100);
 
             }
         } catch (Exception e) {
@@ -1164,7 +1119,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             EnLargeur100 = remorque.largeur / listeP100.get(0).longueur;
             if ((EnLargeur100 * listeP100.get(0).longueur) % EnLargeur100 == 0) {
-         //       System.out.println("P100 : la longueur autorise des rangs complets de : " + EnLargeur100);
+                //       System.out.println("P100 : la longueur autorise des rangs complets de : " + EnLargeur100);
 
             }
         } catch (Exception e) {
@@ -1213,6 +1168,7 @@ public class MainActivity extends AppCompatActivity {
         if (autorisationForcerCasserUnRang80 == true) {
             p80RangComplet3 = p80RangComplet3 - casser80120Nombre;
         }
+
         int longueurOccupéeParLesRangsComplets80Par3 = faireRang(listeP80, p80RangComplet3, EnLongueur80, listeP80RangComplet3, orientationRang80Par3, longueurOccupéeParLesRangsComplets100Par3 + longueurOccupéeParLesRangsComplets100Par2);
 
 
@@ -1255,7 +1211,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         double resteA = 0;
         double resteB = 0;
         longueurTotaleOccupée = longueurTotaleOccupée + decalageBarresDeSeparation();
-        double a =  longueurTotaleOccupée + tableauResultat.get(0);
+        double a = longueurTotaleOccupée + tableauResultat.get(0);
         double b = longueurTotaleOccupée + tableauResultat.get(1);
         double surfacestr = (p80 * (120 * 80)) + (p100 * (120 * 100));
         //  double surfaceRestantestr = 3168 - surfacestr;
@@ -1279,9 +1235,9 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         }
         surfaceInutilisée = surfaceInutilisée / 100;
         double surfaceRemorque = (remorque.longueur * remorque.largeur) / 100;
-  //      System.out.println("                                                        ");
-   //     System.out.println("Rang A : " + a / 100 + "    Reste : " + resteA / 100);
-  //      System.out.println("Rang B : " + b / 100 + "    Reste : " + resteB / 100);
+        //      System.out.println("                                                        ");
+        //     System.out.println("Rang A : " + a / 100 + "    Reste : " + resteA / 100);
+        //      System.out.println("Rang B : " + b / 100 + "    Reste : " + resteB / 100);
         resultat = findViewById(R.id.resultat);
         resultat.setText("Rang A : " + a / 100 + "    Reste : " + resteA / 100 + "\n" +
                 "Rang B : " + b / 100 + "    Reste : " + resteB / 100 + "\n" +
