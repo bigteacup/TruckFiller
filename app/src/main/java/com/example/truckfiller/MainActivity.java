@@ -2524,6 +2524,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         int remRollsFinalCount;
 
         // Métriques d'évaluation
+        int nbP100EtP80Chargees = -1;
         int nbPalettesChargees = -1;
         int surfaceChargee = -1;
         int nbP100EnRangsComplets = -1;
@@ -2538,39 +2539,43 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
         boolean estMeilleureQue(EvalSolution4 autre) {
             if (autre == null) return true;
-            // 1. Maximiser le nombre total d'éléments (P100 + P80 + Rolls) chargés dans la remorque
+            // 1. Priorité absolue aux palettes (P100 + P80) : ne jamais laisser une P80 ou P100 à quai pour mettre des Rolls à la place
+            if (this.nbP100EtP80Chargees != autre.nbP100EtP80Chargees) {
+                return this.nbP100EtP80Chargees > autre.nbP100EtP80Chargees;
+            }
+            // 2. A nombre de palettes (P100 + P80) égal, maximiser le nombre total d'éléments (donc le nombre de Rolls chargés en dernier)
             if (this.nbPalettesChargees != autre.nbPalettesChargees) {
                 return this.nbPalettesChargees > autre.nbPalettesChargees;
             }
-            // 2. A nombre d'éléments égal, maximiser la surface utile chargée
+            // 3. A nombre d'éléments égal, maximiser la surface utile chargée
             if (this.surfaceChargee != autre.surfaceChargee) {
                 return this.surfaceChargee > autre.surfaceChargee;
             }
-            // 3. Garder les P100 groupées en rangs complets au fond (ne jamais casser un rang P100 sans gain de chargement)
+            // 4. Garder les P100 groupées en rangs complets au fond (ne jamais casser un rang P100 sans gain de chargement)
             if (this.nbP100EnRangsComplets != autre.nbP100EnRangsComplets) {
                 return this.nbP100EnRangsComplets > autre.nbP100EnRangsComplets;
             }
-            // 4. Minimiser la surface perdue (latérale, creux internes, décrochements)
+            // 5. Minimiser la surface perdue interne (trous internes dans les blocs P100/P80 ou au-dessus des Rolls)
             if (this.surfacePerdueFond != autre.surfacePerdueFond) {
                 return this.surfacePerdueFond < autre.surfacePerdueFond;
             }
-            // 5. Maximiser le nombre de P80 dans le sens pratique pour le cariste (en long 80*120)
+            // 6. Maximiser le nombre de P80 dans le sens pratique pour le cariste (en long 80*120)
             if (this.nbP80BonSens != autre.nbP80BonSens) {
                 return this.nbP80BonSens > autre.nbP80BonSens;
             }
-            // 6. Maximiser le nombre de Rolls dans le sens souhaité
+            // 7. Maximiser le nombre de Rolls dans le sens souhaité
             if (this.nbRollsSensVoulu != autre.nbRollsSensVoulu) {
                 return this.nbRollsSensVoulu > autre.nbRollsSensVoulu;
             }
-            // 7. Minimiser la longueur occupée (maxYCharge)
+            // 8. Minimiser la longueur occupée (maxYCharge)
             if (this.maxYCharge != autre.maxYCharge) {
                 return this.maxYCharge < autre.maxYCharge;
             }
-            // 8. Minimiser le décrochement entre gauche et droite
+            // 9. Minimiser le décrochement entre gauche et droite
             if (this.ecartCouloirs != autre.ecartCouloirs) {
                 return this.ecartCouloirs < autre.ecartCouloirs;
             }
-            // 9. Privilégier le plus grand nombre de rangs complets
+            // 10. Privilégier le plus grand nombre de rangs complets
             return this.nbRangsComplets > autre.nbRangsComplets;
         }
     }
@@ -2684,14 +2689,14 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         EvalSolution4[] bestRef = new EvalSolution4[]{null};
 
         int maxR100Long = (cap100Long > 0) ? (p100 / cap100Long) : 0;
-        boolean testerR100Long = (cap100Long > 0 && (W % 100 == 0 || (W % 100) < (W % 120) || !autorisationRotation100SiPossibleDeFaireUnRang));
+        boolean testerR100Long = (cap100Long > 0 && (W % 100 == 0 || (W % 100) < (W % 120)));
 
         for (int r100Long = 0; r100Long <= maxR100Long; r100Long++) {
             if (!testerR100Long && r100Long > 0) {
                 continue;
             }
             int rem100AfterLong = p100 - r100Long * cap100Long;
-            int maxR100Larg = (cap100Larg > 0 && autorisationRotation100SiPossibleDeFaireUnRang) ? (rem100AfterLong / cap100Larg) : 0;
+            int maxR100Larg = (cap100Larg > 0) ? (rem100AfterLong / cap100Larg) : 0;
             // On ne casse au maximum qu'un seul rang complet de P100 (sauf si rotation100Force l'impose ou si W % 120 != 0)
             int nbCasser100Max = (W % 120 == 0) ? Math.max(1, (rotation100Force + cap100Larg - 1) / Math.max(1, cap100Larg)) : maxR100Larg;
             int minR100Larg = Math.max(0, maxR100Larg - nbCasser100Max);
@@ -2772,10 +2777,14 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
     ) {
         if (idxCol100 == nbCol100 - 1) {
             temp100[idxCol100] = rest100;
+            int somme100Trans = 0;
+            for (int k = 0; k < nbCol100; k++) {
+                somme100Trans += temp100[k];
+            }
             // Déterminer combien de P80 mettre dans la zone de transition P100/P80 :
             // En W=240, on met uniquement les P80 nécessaires pour accompagner les P100 sur la même hauteur (ex: 1 à 4 P80).
             // En W=300 (où W % 80 != 0), les couloirs 120+100+80 peuvent accueillir toutes les P80 ou une partie.
-            int max80ForTrans = (W % 80 == 0) ? Math.min(p80Total, rest100 * 3 + 3) : p80Total;
+            int max80ForTrans = (W % 80 == 0) ? Math.min(p80Total, Math.max(3, somme100Trans * 2 + 1)) : p80Total;
             int min80ForTrans = (W % 80 == 0) ? 0 : Math.max(0, p80Total - cap80Long * 2);
             for (int n80Trans = min80ForTrans; n80Trans <= max80ForTrans; n80Trans++) {
                 repartir80Transition4(
@@ -2953,7 +2962,9 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                 }
             }
             if (minYTrans100 == Integer.MAX_VALUE) minYTrans100 = yApresRangs100;
-            if (totalTrans > 1) {
+            // Si d'autres éléments (P80 ou Rolls) sont posés en dessous de la zone de transition P100/P80,
+            // toute largeur inutilisée (W - sommeLargActive) forme un trou interne enfermé au milieu de la remorque !
+            if (totalTrans > 1 || rem80Dispo > 0 || rollsTotal > 0) {
                 surfacePerdueBase += Math.max(0, W - sommeLargActive) * Math.max(0, maxYTrans100 - yApresRangs100);
             }
             for (int k = 0; k < K; k++) {
@@ -2977,10 +2988,10 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         for (int r80Long = minR80Long; r80Long <= maxR80Autorise; r80Long++) {
             int rem80AfterLong = rem80Dispo - r80Long * cap80Long;
             // En W=240, 3 rangs de 2 P80 en large (240 cm) équivalent à 2 rangs de 3 P80 en long (240 cm),
-            // donc r80Larg n'a besoin de varier qu'entre 0 et 2 (ou plus si casser80 > 0 ou autorisationRangBatard80).
+            // donc r80Larg n'a besoin de varier qu'entre 0 et 3 (ou plus si casser80 > 0 ou autorisationRangBatard80).
             int maxR80LargPossible = (cap80Larg > 0) ? (rem80AfterLong / cap80Larg) : 0;
             int maxR80LargUtile = (W % 80 == 0 && casser80 == 0 && !autorisationRangBatard80)
-                    ? Math.min(maxR80LargPossible, 2)
+                    ? Math.min(maxR80LargPossible, 3)
                     : maxR80LargPossible;
 
             for (int r80Larg = 0; r80Larg <= maxR80LargUtile; r80Larg++) {
@@ -3011,9 +3022,6 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                 }
 
                 // Étape 4 : Transition P80 / Rolls + Zone finale Rolls
-                // On teste combien de P80 du reliquat rem80Tail on place dans la zone de transition P80/Rolls
-                // (les éventuelles P80 qui ne rentrent pas dans la remorque iront à quai en Étape 6,
-                // ce qui permet aux Rolls de prendre la place restante avant les portes si une P80 ne rentre plus !)
                 int maxM80Tail = Math.min(rem80Tail, 4);
                 for (int m80 = 0; m80 <= maxM80Tail; m80++) {
                     if (m80 < rem80Tail && yCur80 + 80 <= L && rollsTotal == 0) {
@@ -3228,8 +3236,9 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                         hFinal = rangsFin * dyFinal;
                     }
 
+                    int nbP100EtP80Chargees = nbChargeesAfter80 + m80;
                     int rollsCharges = nRollsDr + nRollsSous + rRollsLong * capRollsLong + rRollsLarg * capRollsLarg + nFinalRentres;
-                    int nbChargees = nbChargeesAfter80 + m80 + rollsCharges;
+                    int nbChargees = nbP100EtP80Chargees + rollsCharges;
                     int surfaceChargee = surfaceChargeeAfter80 + m80 * (80 * 120) + rollsCharges * (57 * 135);
                     int nbP80BonSens = nbP80BonSensAfter80 + p80BonSensTail;
 
@@ -3240,37 +3249,31 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                     int rollsEnLarge = rollsCharges - rollsEnLong;
                     int nbRollsSensVoulu = autorisationForcerRotationRolls ? rollsEnLarge : rollsEnLong;
 
-                    // Calcul de la surface perdue et des longueurs finales
+                    // Calcul de la surface perdue interne
                     int surfacePerdueTail = 0;
-                    if (m80 > 0 || nRollsDr > 0 || nRollsSous > 0) {
-                        int wDrUsed = 0;
-                        if (nRollsDr > 0) {
-                            int nbColsDr = (drMode == 1) ? Math.min(nRollsDr, W - wP80 >= 57 ? (W - wP80) / 57 : 1) : 1;
-                            wDrUsed = (drMode == 1) ? (nbColsDr * 57) : 135;
-                        }
-                        int wTotalTail = wP80 + wDrUsed;
-                        int hZoneTail = yBaseFullRolls - yBaseTail;
-                        if (m80 + nRollsDr > 1) {
-                            surfacePerdueTail += Math.max(0, W - wTotalTail) * hZoneTail;
-                        }
-                        surfacePerdueTail += Math.abs(yGaucheFin - yDroiteFin) * Math.min(wP80 > 0 ? wP80 : W, wDrUsed > 0 ? wDrUsed : W);
+                    boolean hasRollsBelow = (rRollsLong > 0 || rRollsLarg > 0 || nFinalRentres > 0);
+                    if (hasRollsBelow && (m80 > 0 || nRollsDr > 0 || nRollsSous > 0)) {
+                        // La zone yBaseTail..yBaseFullRolls est refermée par des Rolls en dessous :
+                        // tout espace non occupé dans ce rectangle est un trou interne enfermé !
+                        int surfaceZoneTail = W * (yBaseFullRolls - yBaseTail);
+                        int surfaceUtileTail = m80 * (80 * 120) + (nRollsDr + nRollsSous) * (57 * 135);
+                        surfacePerdueTail += Math.max(0, surfaceZoneTail - surfaceUtileTail);
+                    } else if (m80 > 0 || nRollsDr > 0 || nRollsSous > 0) {
+                        // Fin de chargement ouverte vers les portes : on ne pénalise que les décrochements internes entre P80
+                        // ou un retour en L sous les P80 (nRollsSous > 0)
                         if (modeP80Tail == 2 && hCol0 != hCol1) {
                             surfacePerdueTail += Math.abs(hCol0 - hCol1) * 80;
                         } else if (modeP80Tail == 4 && hCol0 != hCol1) {
                             surfacePerdueTail += Math.abs(hCol0 - hCol1) * 80;
                         }
-                    }
-
-                    if (rRollsLong > 0) {
-                        surfacePerdueTail += rRollsLong * (W - capRollsLong * 57) * 135;
-                    }
-                    if (rRollsLarg > 0) {
-                        surfacePerdueTail += rRollsLarg * (W - capRollsLarg * 135) * 57;
-                    }
-                    if (nFinalRentres > 0) {
-                        int wElem = (finalMode == 1) ? 57 : 135;
-                        int parRang = Math.min(nFinalRentres, capFinal);
-                        surfacePerdueTail += (W - parRang * wElem) * hFinal;
+                        if (nRollsSous > 0) {
+                            int nbColsSous = (sousMode == 1) ? Math.min(nRollsSous, Math.max(1, wP80 / 57)) : 1;
+                            int wSousUsed = (sousMode == 1) ? (nbColsSous * 57) : 135;
+                            surfacePerdueTail += Math.max(0, wP80 - wSousUsed) * hSous;
+                        }
+                        if (nRollsDr == 0 && nRollsSous == 0 && m80 > 1 && (W % 80 != 0)) {
+                            surfacePerdueTail += Math.max(0, W - wP80) * (yGaucheFin - yBaseTail);
+                        }
                     }
 
                     int maxYCharge = yAfterLarg + hFinal;
@@ -3282,6 +3285,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                     int nbRangsComplets = r100Long + r100Larg + r80Long + r80Larg + rRollsLong + rRollsLarg;
 
                     EvalSolution4 cand = new EvalSolution4();
+                    cand.nbP100EtP80Chargees = nbP100EtP80Chargees;
                     cand.nbPalettesChargees = nbChargees;
                     cand.surfaceChargee = surfaceChargee;
                     cand.nbP100EnRangsComplets = nbP100EnRangsComplets;
