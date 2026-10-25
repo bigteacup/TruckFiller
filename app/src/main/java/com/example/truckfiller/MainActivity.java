@@ -2555,13 +2555,13 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             if (this.nbP100EnRangsComplets != autre.nbP100EnRangsComplets) {
                 return this.nbP100EnRangsComplets > autre.nbP100EnRangsComplets;
             }
-            // 5. Maximiser le nombre de P80 dans le sens pratique pour le cariste (en long 80*120)
-            if (this.nbP80BonSens != autre.nbP80BonSens) {
-                return this.nbP80BonSens > autre.nbP80BonSens;
-            }
-            // 6. Minimiser la surface perdue interne (trous internes dans les blocs P100/P80 ou au-dessus des Rolls)
+            // 5. Minimiser la surface perdue interne (trous internes dans les blocs P100/P80 ou au-dessus des Rolls)
             if (this.surfacePerdueFond != autre.surfacePerdueFond) {
                 return this.surfacePerdueFond < autre.surfacePerdueFond;
+            }
+            // 6. Maximiser le nombre de P80 dans le sens pratique pour le cariste (en long 80*120)
+            if (this.nbP80BonSens != autre.nbP80BonSens) {
+                return this.nbP80BonSens > autre.nbP80BonSens;
             }
             // 7. Maximiser le nombre de Rolls dans le sens souhaité
             if (this.nbRollsSensVoulu != autre.nbRollsSensVoulu) {
@@ -2980,8 +2980,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         // Étape 3 : Rangs complets de P80 (r80Long en 80*120, puis r80Larg en 120*80)
         int maxR80Possible = (cap80Long > 0) ? (rem80Dispo / cap80Long) : 0;
         int maxR80Autorise = Math.max(0, maxR80Possible - casser80);
-        int maxR80Rentrant = Math.max(0, (L - yBaseP80) / 120);
-        int minR80Long = Math.max(0, Math.min(maxR80Autorise - 2, maxR80Rentrant - 2));
+        int minR80Long = Math.max(0, maxR80Autorise - 2);
         if (W % 80 != 0) {
             minR80Long = 0;
         }
