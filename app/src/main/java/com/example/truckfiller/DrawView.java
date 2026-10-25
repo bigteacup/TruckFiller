@@ -32,9 +32,12 @@ public class DrawView extends View {
     ArrayList<Rang> listeP80RangComplet2;
     ArrayList<Rang> listeP100RangComplet2;
     ArrayList<Rang> listeP100RangComplet3;
+    ArrayList<Rang> listeRollsRangComplet4;
+    ArrayList<Rang> listeRollsRangComplet2;
     ArrayList<ArrayList<Rang>> listeDesListesDeRangComplets;
     ArrayList<Palette> listeP80;
     ArrayList<Palette> listeP100;
+    ArrayList<Palette> listeRolls;
     ArrayList<Palette> listeDePalettesPosees;
 
 
@@ -43,6 +46,8 @@ public class DrawView extends View {
     int longueurOccupéeParLesRangsComplets80Par2;
     int longueurOccupéeParLesRangsComplets100Par3;
     int longueurOccupéeParLesRangsComplets100Par2;
+    int longueurOccupéeParLesRangsCompletsRollsPar4;
+    int longueurOccupéeParLesRangsCompletsRollsPar2;
 
 
     float finRang80 = 0;
@@ -80,8 +85,10 @@ public class DrawView extends View {
             for (Palette pal : listeDePalettesPosees) {
                 if (pal.largeur == 80) {
                     paint.setColor(getResources().getColor(R.color.cbrownp));
-                } else {
+                } else if (pal.largeur == 100) {
                     paint.setColor(getResources().getColor(R.color.cgreen));
+                } else {
+                    paint.setColor(getResources().getColor(R.color.cpink));
                 }
 
                 paint2.setColor(Color.WHITE);
@@ -145,8 +152,10 @@ public class DrawView extends View {
                     for (Palette pal : listeDesListesDeRangComplets.get(i).get(ia).listePaletteDuRang) {
                         if (pal.largeur == 80) {
                             paint.setColor(getResources().getColor(R.color.cbrownp));
-                        } else {
+                        } else if (pal.largeur == 100) {
                             paint.setColor(getResources().getColor(R.color.cgreen));
+                        } else {
+                            paint.setColor(getResources().getColor(R.color.cpink));
                         }
 
                         paint2.setColor(Color.WHITE);
@@ -171,8 +180,10 @@ public class DrawView extends View {
             for (Palette pal : listeP80) {
                 if (pal.largeur == 80) {
                     paint.setColor(getResources().getColor(R.color.cbrownp));
-                } else {
+                } else if (pal.largeur == 100) {
                     paint.setColor(getResources().getColor(R.color.cgreen));
+                } else {
+                    paint.setColor(getResources().getColor(R.color.cpink));
                 }
 
                 paint2.setColor(Color.WHITE);
@@ -192,8 +203,10 @@ public class DrawView extends View {
             for (Palette pal : listeP100) {
                 if (pal.largeur == 80) {
                     paint.setColor(getResources().getColor(R.color.cbrownp));
-                } else {
+                } else if (pal.largeur == 100) {
                     paint.setColor(getResources().getColor(R.color.cgreen));
+                } else {
+                    paint.setColor(getResources().getColor(R.color.cpink));
                 }
 
                 paint2.setColor(Color.WHITE);
@@ -211,6 +224,30 @@ public class DrawView extends View {
 
 
                 //  positionDeFin =  pal.positionYb;
+            }
+            if (listeRolls != null) {
+                for (Palette pal : listeRolls) {
+                    if (pal.largeur == 80) {
+                        paint.setColor(getResources().getColor(R.color.cbrownp));
+                    } else if (pal.largeur == 100) {
+                        paint.setColor(getResources().getColor(R.color.cgreen));
+                    } else {
+                        paint.setColor(getResources().getColor(R.color.cpink));
+                    }
+
+                    paint2.setColor(Color.WHITE);
+                    paint.setStrokeWidth(0);
+                    canvas.drawRect(marge10 + (pal.positionX / coef), marge10 + (pal.positionY) / coef, marge10 + (pal.positionXb / coef), marge10 + (pal.positionYb) / coef, paint);
+                    paint.setColor(Color.WHITE);
+                    canvas.drawRect(marge10 + (pal.positionX / coef), marge10 + (pal.positionY) / coef, marge10 + (pal.positionXb) / coef, marge10 + (pal.positionY + whiteBarsShift) / coef, paint); // horizontale haute
+                    canvas.drawRect(marge10 + (pal.positionX / coef), marge10 + (pal.positionYb) / coef, marge10 + (pal.positionXb) / coef, marge10 + (pal.positionYb - whiteBarsShift) / coef, paint);  // horizontale basse
+                    canvas.drawRect(marge10 + (pal.positionX / coef), marge10 + (pal.positionY) / coef, marge10 + (pal.positionX + whiteBarsShift) / coef, marge10 + (pal.positionYb) / coef, paint);   //verticale gauche
+                    canvas.drawRect(marge10 + (pal.positionXb / coef), marge10 + (pal.positionY) / coef, marge10 + (pal.positionXb - whiteBarsShift) / coef, marge10 + (pal.positionYb) / coef, paint); //verticale droite
+                    //Numero de palette
+                    paint.setColor(Color.WHITE);
+                    paint.setTextSize(30);
+                    canvas.drawText(String.valueOf(pal.id), marge10 + 10 + (pal.positionX) / coef, marge10 + 35 + (pal.positionY) / coef, paint);
+                }
             }
             paintDebordement.setColor(Color.RED);
             paintDebordement.setAlpha(100);
@@ -233,9 +270,3 @@ public class DrawView extends View {
 
 
 }
-
-
-
-
-
-

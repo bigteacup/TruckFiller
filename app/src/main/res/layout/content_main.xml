@@ -233,6 +233,64 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <android.support.design.widget.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1">
+
+                        <android.support.design.widget.TextInputEditText
+                            android:id="@+id/nombreRolls"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@color/cpink"
+                            android:hint="Rolls 57*135"
+                            android:inputType="number|numberDecimal"
+                            android:maxLength="3"
+                            android:paddingTop="0dp"
+                            android:selectAllOnFocus="true" />
+                    </android.support.design.widget.TextInputLayout>
+
+                    <android.support.design.widget.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:orientation="horizontal">
+
+                            <ToggleButton
+                                android:id="@+id/autoriserRotationRollsSiPossibleDeFaireUnRang"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:inputType="number|numberDecimal"
+                                android:selectAllOnFocus="true" />
+
+                            <ToggleButton
+                                android:id="@+id/forcerRotationRolls"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:inputType="number|numberDecimal"
+                                android:selectAllOnFocus="true"
+                                android:textOff="forcerRotaRolls"
+                                android:textOn="forcerRotaRolls"
+                                android:textSize="8sp" />
+                        </LinearLayout>
+
+                    </android.support.design.widget.TextInputLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:orientation="horizontal">
