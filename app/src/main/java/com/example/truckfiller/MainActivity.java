@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton switchAutoriserRotation100SiPossibleDeFaireUnRang;
     private ToggleButton switchAutoriserRotationRollsSiPossibleDeFaireUnRang;
     private boolean autorisationRangBatard80;
-    private boolean autorisationRotation100SiPossibleDeFaireUnRang = false;
-    private boolean autorisationRotationRollsSiPossibleDeFaireUnRang = false;
+    private boolean autorisationRotation100SiPossibleDeFaireUnRang = true;
+    private boolean autorisationRotationRollsSiPossibleDeFaireUnRang = true;
     private View drawlocation;
     private LinearLayout drawPosRemorque;
     private ScrollView scrollViewRemorque;
@@ -430,7 +430,18 @@ public class MainActivity extends AppCompatActivity {
         switchAutoriserRotation100SiPossibleDeFaireUnRang.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //rien
+                if (autorisationRotation100SiPossibleDeFaireUnRang == true) {
+                    autorisationRotation100SiPossibleDeFaireUnRang = false;
+                    switchAutoriserRotation100SiPossibleDeFaireUnRang.setChecked(false);
+                } else {
+                    autorisationRotation100SiPossibleDeFaireUnRang = true;
+                    switchAutoriserRotation100SiPossibleDeFaireUnRang.setChecked(true);
+                }
+                if (oldMode) {
+                    calculer();
+                } else {
+                    calculer4();
+                }
             }
         });
 
@@ -439,7 +450,18 @@ public class MainActivity extends AppCompatActivity {
         switchAutoriserRotationRollsSiPossibleDeFaireUnRang.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //rien
+                if (autorisationRotationRollsSiPossibleDeFaireUnRang == true) {
+                    autorisationRotationRollsSiPossibleDeFaireUnRang = false;
+                    switchAutoriserRotationRollsSiPossibleDeFaireUnRang.setChecked(false);
+                } else {
+                    autorisationRotationRollsSiPossibleDeFaireUnRang = true;
+                    switchAutoriserRotationRollsSiPossibleDeFaireUnRang.setChecked(true);
+                }
+                if (oldMode) {
+                    calculer();
+                } else {
+                    calculer4();
+                }
             }
         });
 
@@ -2448,71 +2470,67 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
 
     // =============================================================================================
-    // CALCULER 4 : Copie évoluée de calculer3() intégrant les Rolls danois (57 * 135 cm)
-    // mélangés librement avec les palettes 80*120 et 100*120 pour optimiser l'espace
+    // CALCULER 4 : Algorithme par blocs ordonnés (P100 -> Transition P100/P80 -> P80 -> Rolls en dernier)
+    // Respecte strictement l'ordre de chargement cariste, l'orientation optimale des P80 (80*120)
+    // et des P100 (120*100), ainsi que les boutons d'autorisation/forçage de rotation des Rolls (57*135).
     // =============================================================================================
 
-    private static class MotifTranche4 {
-        int nb100;
-        int nb80;
-        int nbRolls;
-        int deltaY;
-        int orient100;
-        int orient80;
-        int orientRolls;
-
-        MotifTranche4(int nb100, int nb80, int nbRolls, int deltaY, int orient100, int orient80, int orientRolls) {
-            this.nb100 = nb100;
-            this.nb80 = nb80;
-            this.nbRolls = nbRolls;
-            this.deltaY = deltaY;
-            this.orient100 = orient100;
-            this.orient80 = orient80;
-            this.orientRolls = orientRolls;
-        }
-    }
-
     private static class ProfilCouloirs4 {
-        int c135;
         int c120;
         int c100;
         int c80;
-        int c57;
 
-        ProfilCouloirs4(int c135, int c120, int c100, int c80, int c57) {
-            this.c135 = c135;
+        ProfilCouloirs4(int c120, int c100, int c80) {
             this.c120 = c120;
             this.c100 = c100;
             this.c80 = c80;
-            this.c57 = c57;
         }
 
         int totalCouloirs() {
-            return c135 + c120 + c100 + c80 + c57;
+            return c120 + c100 + c80;
         }
     }
 
     private static class EvalSolution4 {
+        // 1. Rangs complets P100 au fond
         int r100Long;
         int r100Larg;
-        MotifTranche4 motifMixte;
-        int rMixte;
+
+        // 2. Zone de transition P100 / P80 (immédiatement après les rangs P100 si rem100 > 0)
+        ProfilCouloirs4 profilTrans100;
+        int[] transCol100;
+        int[] transCol100Rot;
+        int[] transCol80;
+        int[] transColLargeur;
+        int[] transColXStart;
+
+        // 3. Rangs complets P80 au milieu
         int r80Long;
+        int r80Larg;
+
+        // 4. Zone de transition P80 / Rolls + Zone finale Rolls tout au bout
+        int modeP80Tail; // 0=aucun, 1=1xC80, 2=2xC80, 3=1xC120, 4=C120+C80
+        int tail80Col0;
+        int tail80Col1;
+        int rollsDroiteMode; // 0=aucun, 1=en long (57*135), 2=en large (135*57)
+        int rollsDroiteCount;
+        int rollsSousP80Mode; // 0=aucun, 1=en long (57*135), 2=en large (135*57)
+        int rollsSousP80Count;
+
+        // 5. Rangs / reliquat de Rolls sur toute la largeur W (tout à la fin)
         int rRollsLong;
         int rRollsLarg;
-        ProfilCouloirs4 profilCouloirs;
-        int[] col100Count;
-        int[] col100RotCount;
-        int[] col80Count;
-        int[] colRollsCount;
-        int[] colLargeur;
-        int[] colXStart;
+        int remRollsFinalMode; // 1=en long (57*135), 2=en large (135*57)
+        int remRollsFinalCount;
 
+        // Métriques d'évaluation
         int nbPalettesChargees = -1;
         int surfaceChargee = -1;
+        int nbP100EnRangsComplets = -1;
         int surfacePerdueFond = Integer.MAX_VALUE;
         int nbP80BonSens = -1;
-        int maxY = Integer.MAX_VALUE;
+        int nbRollsSensVoulu = -1;
+        int maxYCharge = Integer.MAX_VALUE;
         int ecartCouloirs = Integer.MAX_VALUE;
         int nbRangsComplets = -1;
         int rangA = 0;
@@ -2520,7 +2538,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
         boolean estMeilleureQue(EvalSolution4 autre) {
             if (autre == null) return true;
-            // 1. Maximiser le nombre d'éléments (palettes + rolls) qui rentrent dans la remorque
+            // 1. Maximiser le nombre total d'éléments (P100 + P80 + Rolls) chargés dans la remorque
             if (this.nbPalettesChargees != autre.nbPalettesChargees) {
                 return this.nbPalettesChargees > autre.nbPalettesChargees;
             }
@@ -2528,23 +2546,31 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             if (this.surfaceChargee != autre.surfaceChargee) {
                 return this.surfaceChargee > autre.surfaceChargee;
             }
-            // 3. Minimiser la surface perdue au fond, sur la droite et dans les creux
+            // 3. Garder les P100 groupées en rangs complets au fond (ne jamais casser un rang P100 sans gain de chargement)
+            if (this.nbP100EnRangsComplets != autre.nbP100EnRangsComplets) {
+                return this.nbP100EnRangsComplets > autre.nbP100EnRangsComplets;
+            }
+            // 4. Minimiser la surface perdue (latérale, creux internes, décrochements)
             if (this.surfacePerdueFond != autre.surfacePerdueFond) {
                 return this.surfacePerdueFond < autre.surfacePerdueFond;
             }
-            // 4. A compacité égale, maximiser le nombre de P80 dans le sens pratique (en long 80*120)
+            // 5. Maximiser le nombre de P80 dans le sens pratique pour le cariste (en long 80*120)
             if (this.nbP80BonSens != autre.nbP80BonSens) {
                 return this.nbP80BonSens > autre.nbP80BonSens;
             }
-            // 5. Minimiser la longueur maximale occupée (maxY)
-            if (this.maxY != autre.maxY) {
-                return this.maxY < autre.maxY;
+            // 6. Maximiser le nombre de Rolls dans le sens souhaité
+            if (this.nbRollsSensVoulu != autre.nbRollsSensVoulu) {
+                return this.nbRollsSensVoulu > autre.nbRollsSensVoulu;
             }
-            // 6. Minimiser le décrochement (écart entre couloirs)
+            // 7. Minimiser la longueur occupée (maxYCharge)
+            if (this.maxYCharge != autre.maxYCharge) {
+                return this.maxYCharge < autre.maxYCharge;
+            }
+            // 8. Minimiser le décrochement entre gauche et droite
             if (this.ecartCouloirs != autre.ecartCouloirs) {
                 return this.ecartCouloirs < autre.ecartCouloirs;
             }
-            // 7. Privilégier le plus grand nombre de rangs complets
+            // 9. Privilégier le plus grand nombre de rangs complets
             return this.nbRangsComplets > autre.nbRangsComplets;
         }
     }
@@ -2648,192 +2674,57 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         int cap100Long = W / 100;
         int cap100Larg = W / 120;
         int cap80Long = W / 80;
+        int cap80Larg = W / 120;
         int capRollsLong = W / 57;
         int capRollsLarg = W / 135;
 
-        ArrayList<MotifTranche4> motifsMixtes = new ArrayList<>();
-        // Motifs mixtes impliquant P100, P80 et/ou Rolls (sans débordement et avec bonne densité)
-        for (int i100 = 0; i100 <= W / 100; i100++) {
-            for (int i80 = 0; i80 <= (W - i100 * 100) / 80; i80++) {
-                for (int iRolls = 0; iRolls <= (W - i100 * 100 - i80 * 80) / 57; iRolls++) {
-                    int typesPresents = (i100 > 0 ? 1 : 0) + (i80 > 0 ? 1 : 0) + (iRolls > 0 ? 1 : 0);
-                    if (typesPresents >= 2) {
-                        int usedW = i100 * 100 + i80 * 80 + iRolls * 57;
-                        if (W - usedW < 57) {
-                            int dy = (iRolls > 0) ? 135 : 120;
-                            motifsMixtes.add(new MotifTranche4(i100, i80, iRolls, dy, 0, 0, 0));
-                        }
-                    }
-                }
-            }
-        }
+        boolean rotRollsPermise = autorisationRotationRollsSiPossibleDeFaireUnRang || autorisationForcerRotationRolls;
 
-        ArrayList<ProfilCouloirs4> profilsCouloirs = genererProfilsCouloirs4(W);
-
+        ArrayList<ProfilCouloirs4> profilsTrans100 = genererProfilsCouloirs4(W);
         EvalSolution4[] bestRef = new EvalSolution4[]{null};
 
         int maxR100Long = (cap100Long > 0) ? (p100 / cap100Long) : 0;
-        boolean TesterTousR100Long = (cap100Long > 0 && (W % 100 == 0 || (W % 100) < (W % 120)));
+        boolean testerR100Long = (cap100Long > 0 && (W % 100 == 0 || (W % 100) < (W % 120) || !autorisationRotation100SiPossibleDeFaireUnRang));
 
         for (int r100Long = 0; r100Long <= maxR100Long; r100Long++) {
-            if (!TesterTousR100Long && r100Long > 0 && r100Long < maxR100Long) {
+            if (!testerR100Long && r100Long > 0) {
                 continue;
             }
             int rem100AfterLong = p100 - r100Long * cap100Long;
-            int maxR100Larg = (cap100Larg > 0) ? (rem100AfterLong / cap100Larg) : 0;
+            int maxR100Larg = (cap100Larg > 0 && autorisationRotation100SiPossibleDeFaireUnRang) ? (rem100AfterLong / cap100Larg) : 0;
+            // On ne casse au maximum qu'un seul rang complet de P100 (sauf si rotation100Force l'impose ou si W % 120 != 0)
+            int nbCasser100Max = (W % 120 == 0) ? Math.max(1, (rotation100Force + cap100Larg - 1) / Math.max(1, cap100Larg)) : maxR100Larg;
+            int minR100Larg = Math.max(0, maxR100Larg - nbCasser100Max);
 
-            int minR100Larg = Math.max(0, maxR100Larg - 3);
             for (int r100Larg = minR100Larg; r100Larg <= maxR100Larg; r100Larg++) {
                 int rem100 = rem100AfterLong - r100Larg * cap100Larg;
 
-                int nbMotifs = motifsMixtes.size();
-                for (int mIdx = -1; mIdx < nbMotifs; mIdx++) {
-                    MotifTranche4 motif = (mIdx >= 0) ? motifsMixtes.get(mIdx) : null;
-                    int maxRMixte = 0;
-                    if (motif != null) {
-                        int lim100 = (motif.nb100 > 0) ? (rem100 / motif.nb100) : Integer.MAX_VALUE;
-                        int lim80 = (motif.nb80 > 0) ? (p80 / motif.nb80) : Integer.MAX_VALUE;
-                        int limRolls = (motif.nbRolls > 0) ? (rolls / motif.nbRolls) : Integer.MAX_VALUE;
-                        maxRMixte = Math.min(lim100, Math.min(lim80, limRolls));
-                    }
-
-                    for (int rMixte = 0; rMixte <= maxRMixte; rMixte++) {
-                        if (mIdx >= 0 && rMixte == 0) continue;
-
-                        int rem100AfterMix = rem100 - (motif != null ? rMixte * motif.nb100 : 0);
-                        int rem80AfterMix = p80 - (motif != null ? rMixte * motif.nb80 : 0);
-                        int remRollsAfterMix = rolls - (motif != null ? rMixte * motif.nbRolls : 0);
-
-                        int maxR80Possible = (cap80Long > 0) ? (rem80AfterMix / cap80Long) : 0;
-                        int maxR80Autorise = Math.max(0, maxR80Possible - casser80);
-                        int minR80 = Math.max(0, maxR80Autorise - 3);
-                        if (W % 80 != 0) {
-                            minR80 = 0;
-                        }
-
-                        for (int r80Long = minR80; r80Long <= maxR80Autorise; r80Long++) {
-                            if (W % 80 != 0 && r80Long > 0 && r80Long < maxR80Autorise - 2) {
-                                continue;
-                            }
-                            int rem80 = rem80AfterMix - r80Long * cap80Long;
-
-                            int maxRRollsLong = (capRollsLong > 0 && !autorisationForcerRotationRolls) ? (remRollsAfterMix / capRollsLong) : 0;
-                            int minRRollsLong = Math.max(0, maxRRollsLong - 2);
-                            for (int rRollsLong = 0; rRollsLong <= maxRRollsLong; rRollsLong++) {
-                                if (rRollsLong > 0 && rRollsLong < minRRollsLong) continue;
-
-                                int remRollsAfterLong = remRollsAfterMix - rRollsLong * capRollsLong;
-                                int maxRRollsLarg = (capRollsLarg > 0) ? (remRollsAfterLong / capRollsLarg) : 0;
-                                int minRRollsLarg = autorisationForcerRotationRolls ? Math.max(0, maxRRollsLarg - 1) : 0;
-
-                                for (int rRollsLarg = minRRollsLarg; rRollsLarg <= maxRRollsLarg; rRollsLarg++) {
-                                    if (!autorisationForcerRotationRolls && rRollsLarg > 0 && rRollsLarg < maxRRollsLarg) continue;
-
-                                    int remRolls = remRollsAfterLong - rRollsLarg * capRollsLarg;
-
-                                    int h100Long = r100Long * 120;
-                                    int h100Larg = r100Larg * 100;
-                                    int hMixte = (motif != null) ? (rMixte * motif.deltaY) : 0;
-                                    int h80Long = r80Long * 120;
-                                    int hRollsLong = rRollsLong * 135;
-                                    int hRollsLarg = rRollsLarg * 57;
-                                    int yBaseCouloirs = yDepart + h100Long + h100Larg + hMixte + h80Long + hRollsLong + hRollsLarg;
-
-                                    int surfacePerdueTranches = 0;
-                                    if (r100Long > 0) {
-                                        surfacePerdueTranches += r100Long * (W - cap100Long * 100) * 120;
-                                    }
-                                    if (r100Larg > 0) {
-                                        surfacePerdueTranches += r100Larg * (W - cap100Larg * 120) * 100;
-                                    }
-                                    if (motif != null && rMixte > 0) {
-                                        int wMotif = motif.nb100 * 100 + motif.nb80 * 80 + motif.nbRolls * 57;
-                                        surfacePerdueTranches += rMixte * (W - wMotif) * motif.deltaY;
-                                        if (motif.nbRolls > 0 && (motif.nb100 > 0 || motif.nb80 > 0)) {
-                                            surfacePerdueTranches += rMixte * (motif.nb100 * 100 + motif.nb80 * 80) * (135 - 120);
-                                        }
-                                    }
-                                    if (r80Long > 0) {
-                                        surfacePerdueTranches += r80Long * (W - cap80Long * 80) * 120;
-                                    }
-                                    if (rRollsLong > 0) {
-                                        surfacePerdueTranches += rRollsLong * (W - capRollsLong * 57) * 135;
-                                    }
-                                    if (rRollsLarg > 0) {
-                                        surfacePerdueTranches += rRollsLarg * (W - capRollsLarg * 135) * 57;
-                                    }
-
-                                    int palettesTranchesChargees = 0;
-                                    int surfaceTranchesChargee = 0;
-                                    int p80BonSensTranches = 0;
-                                    int yCursor = yDepart;
-
-                                    for (int i = 0; i < r100Long; i++) {
-                                        if (yCursor + 120 <= L) {
-                                            palettesTranchesChargees += cap100Long;
-                                            surfaceTranchesChargee += cap100Long * (100 * 120);
-                                        }
-                                        yCursor += 120;
-                                    }
-                                    for (int i = 0; i < r100Larg; i++) {
-                                        if (yCursor + 100 <= L) {
-                                            palettesTranchesChargees += cap100Larg;
-                                            surfaceTranchesChargee += cap100Larg * (100 * 120);
-                                        }
-                                        yCursor += 100;
-                                    }
-                                    if (motif != null) {
-                                        for (int i = 0; i < rMixte; i++) {
-                                            if (yCursor + motif.deltaY <= L) {
-                                                palettesTranchesChargees += (motif.nb100 + motif.nb80 + motif.nbRolls);
-                                                surfaceTranchesChargee += motif.nb100 * (100 * 120) + motif.nb80 * (80 * 120) + motif.nbRolls * (57 * 135);
-                                                p80BonSensTranches += motif.nb80;
-                                            } else if (motif.deltaY == 135 && yCursor + 120 <= L) {
-                                                palettesTranchesChargees += (motif.nb100 + motif.nb80);
-                                                surfaceTranchesChargee += motif.nb100 * (100 * 120) + motif.nb80 * (80 * 120);
-                                                p80BonSensTranches += motif.nb80;
-                                            }
-                                            yCursor += motif.deltaY;
-                                        }
-                                    }
-                                    for (int i = 0; i < r80Long; i++) {
-                                        if (yCursor + 120 <= L) {
-                                            palettesTranchesChargees += cap80Long;
-                                            surfaceTranchesChargee += cap80Long * (80 * 120);
-                                            p80BonSensTranches += cap80Long;
-                                        }
-                                        yCursor += 120;
-                                    }
-                                    for (int i = 0; i < rRollsLong; i++) {
-                                        if (yCursor + 135 <= L) {
-                                            palettesTranchesChargees += capRollsLong;
-                                            surfaceTranchesChargee += capRollsLong * (57 * 135);
-                                        }
-                                        yCursor += 135;
-                                    }
-                                    for (int i = 0; i < rRollsLarg; i++) {
-                                        if (yCursor + 57 <= L) {
-                                            palettesTranchesChargees += capRollsLarg;
-                                            surfaceTranchesChargee += capRollsLarg * (57 * 135);
-                                        }
-                                        yCursor += 57;
-                                    }
-
-                                    int nbRangsComplets = r100Long + r100Larg + rMixte + r80Long + rRollsLong + rRollsLarg;
-
-                                    for (ProfilCouloirs4 profil : profilsCouloirs) {
-                                        evaluerReliquatDansProfil4(
-                                                W, L, yBaseCouloirs,
-                                                r100Long, r100Larg, motif, rMixte, r80Long, rRollsLong, rRollsLarg,
-                                                nbRangsComplets, palettesTranchesChargees, surfaceTranchesChargee,
-                                                p80BonSensTranches, surfacePerdueTranches,
-                                                rem100AfterMix, rem80, remRolls, rotation100Force,
-                                                profil, bestRef
-                                        );
-                                    }
-                                }
-                            }
-                        }
+                if (rem100 == 0) {
+                    // Pas besoin de zone de transition P100/P80 : on passe directement au bloc P80
+                    evaluerBlocP80EtRolls4(
+                            W, L, yDepart,
+                            r100Long, r100Larg,
+                            null, null, null, null,
+                            p80, rolls, casser80, rotation100Force, rotRollsPermise,
+                            cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                            bestRef
+                    );
+                } else {
+                    // Il reste rem100 palettes P100 : on les place immédiatement après les rangs P100
+                    // dans une zone de transition P100 / P80 avec le juste nombre de P80 à droite
+                    for (ProfilCouloirs4 profil : profilsTrans100) {
+                        int nbCol100 = profil.c120 + profil.c100;
+                        if (nbCol100 == 0) continue;
+                        int K = profil.totalCouloirs();
+                        int[] temp100 = new int[K];
+                        int[] temp80 = new int[K];
+                        repartir100Transition4(
+                                0, nbCol100, rem100, K, temp100, temp80,
+                                W, L, yDepart, r100Long, r100Larg, profil,
+                                p80, rolls, casser80, rotation100Force, rotRollsPermise,
+                                cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                                bestRef
+                        );
                     }
                 }
             }
@@ -2841,7 +2732,11 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
         EvalSolution4 best = bestRef[0];
         if (best != null) {
-            construirePalettesPosees4(best, listeP100, listeP80, listeRolls, listeDePalettesPosees, yDepart, W, L, cap100Long, cap100Larg, cap80Long, capRollsLong, capRollsLarg);
+            construirePalettesPosees4(
+                    best, listeP100, listeP80, listeRolls, listeDePalettesPosees,
+                    yDepart, W, L,
+                    cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg
+            );
             afficherResultatsCalculer4(listeDePalettesPosees, p80, p100, rolls, best.rangA, best.rangB, W, L);
         } else {
             afficherResultatsCalculer4(listeDePalettesPosees, p80, p100, rolls, yDepart, yDepart, W, L);
@@ -2850,519 +2745,592 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
     private ArrayList<ProfilCouloirs4> genererProfilsCouloirs4(int W) {
         ArrayList<ProfilCouloirs4> liste = new ArrayList<>();
-        for (int c135 = 0; c135 <= W / 135; c135++) {
-            int rem135 = W - c135 * 135;
-            for (int c120 = 0; c120 <= rem135 / 120; c120++) {
-                int rem120 = rem135 - c120 * 120;
-                for (int c100 = 0; c100 <= rem120 / 100; c100++) {
-                    int rem100 = rem120 - c100 * 100;
-                    for (int c80 = 0; c80 <= rem100 / 80; c80++) {
-                        int rem80 = rem100 - c80 * 80;
-                        int maxC57 = rem80 / 57;
-                        // On teste le profil complet en 57 ainsi que sans 57 (si pas de rolls dans ce couloir)
-                        liste.add(new ProfilCouloirs4(c135, c120, c100, c80, maxC57));
-                        if (maxC57 > 0 && rem80 < 80) {
-                            liste.add(new ProfilCouloirs4(c135, c120, c100, c80, 0));
-                        }
-                    }
+        for (int c120 = 0; c120 <= W / 120; c120++) {
+            int rem120 = W - c120 * 120;
+            for (int c100 = 0; c100 <= rem120 / 100; c100++) {
+                int rem100 = rem120 - c100 * 100;
+                int c80 = rem100 / 80;
+                int rem80 = rem100 - c80 * 80;
+                if (rem80 < 80 && (c120 + c100 + c80) > 0) {
+                    liste.add(new ProfilCouloirs4(c120, c100, c80));
                 }
             }
         }
         if (liste.isEmpty()) {
-            liste.add(new ProfilCouloirs4(0, 0, 0, 0, 1));
+            liste.add(new ProfilCouloirs4(0, 0, 1));
         }
         return liste;
     }
 
-    private void evaluerReliquatDansProfil4(
-            int W, int L, int yBase,
-            int r100Long, int r100Larg, MotifTranche4 motifMixte, int rMixte, int r80Long, int rRollsLong, int rRollsLarg,
-            int nbRangsComplets, int palettesChargeesTranches, int surfaceChargeeTranches,
-            int p80BonSensTranches, int surfacePerdueTranches,
-            int rem100, int rem80, int remRolls, int rotation100Force,
-            ProfilCouloirs4 profil, EvalSolution4[] bestRef
+    private void repartir100Transition4(
+            int idxCol100, int nbCol100, int rest100, int K,
+            int[] temp100, int[] temp80,
+            int W, int L, int yDepart, int r100Long, int r100Larg, ProfilCouloirs4 profil,
+            int p80Total, int rollsTotal, int casser80, int rotation100Force, boolean rotRollsPermise,
+            int cap100Long, int cap100Larg, int cap80Long, int cap80Larg, int capRollsLong, int capRollsLarg,
+            EvalSolution4[] bestRef
     ) {
-        int c135 = profil.c135;
-        int c120 = profil.c120;
-        int c100 = profil.c100;
-        int c80 = profil.c80;
-        int c57 = profil.c57;
-        int K = c135 + c120 + c100 + c80 + c57;
-        if (K <= 0) return;
-
-        int nbCouloirsPour100 = c135 + c120 + c100;
-        if (rem100 > 0 && nbCouloirsPour100 == 0) {
-            return;
-        }
-        int nbCouloirsPour80 = c135 + c120 + c100 + c80;
-        if (rem80 > 0 && nbCouloirsPour80 == 0) {
-            return;
-        }
-
-        int[] temp100 = new int[K];
-        int[] temp80 = new int[K];
-        int[] tempRolls = new int[K];
-
-        repartir100DansCouloirs4(
-                0, nbCouloirsPour100, rem100, rem80, remRolls, K,
-                temp100, temp80, tempRolls,
-                W, L, yBase,
-                r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                p80BonSensTranches, surfacePerdueTranches,
-                rotation100Force, profil, bestRef
-        );
-    }
-
-    private void repartir100DansCouloirs4(
-            int idxCol100, int nbCol100, int rest100, int rem80, int remRolls, int K,
-            int[] temp100, int[] temp80, int[] tempRolls,
-            int W, int L, int yBase,
-            int r100Long, int r100Larg, MotifTranche4 motifMixte, int rMixte, int r80Long, int rRollsLong, int rRollsLarg,
-            int nbRangsComplets, int palettesChargeesTranches, int surfaceChargeeTranches,
-            int p80BonSensTranches, int surfacePerdueTranches,
-            int rotation100Force, ProfilCouloirs4 profil, EvalSolution4[] bestRef
-    ) {
-        if (nbCol100 == 0) {
-            repartir80DansCouloirs4(
-                    0, K, rem80, remRolls,
-                    temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
-            );
-            return;
-        }
-
         if (idxCol100 == nbCol100 - 1) {
             temp100[idxCol100] = rest100;
-            repartir80DansCouloirs4(
-                    0, K, rem80, remRolls,
-                    temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
-            );
+            // Déterminer combien de P80 mettre dans la zone de transition P100/P80 :
+            // En W=240, on met uniquement les P80 nécessaires pour accompagner les P100 sur la même hauteur (ex: 1 à 4 P80).
+            // En W=300 (où W % 80 != 0), les couloirs 120+100+80 peuvent accueillir toutes les P80 ou une partie.
+            int max80ForTrans = (W % 80 == 0) ? Math.min(p80Total, rest100 * 3 + 3) : p80Total;
+            int min80ForTrans = (W % 80 == 0) ? 0 : Math.max(0, p80Total - cap80Long * 2);
+            for (int n80Trans = min80ForTrans; n80Trans <= max80ForTrans; n80Trans++) {
+                repartir80Transition4(
+                        0, K, n80Trans, temp100, temp80,
+                        W, L, yDepart, r100Long, r100Larg, profil,
+                        p80Total - n80Trans, rollsTotal, casser80, rotation100Force, rotRollsPermise,
+                        cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                        bestRef
+                );
+            }
             return;
         }
 
         for (int v = rest100; v >= 0; v--) {
             temp100[idxCol100] = v;
-            repartir100DansCouloirs4(
-                    idxCol100 + 1, nbCol100, rest100 - v, rem80, remRolls, K,
-                    temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
+            repartir100Transition4(
+                    idxCol100 + 1, nbCol100, rest100 - v, K, temp100, temp80,
+                    W, L, yDepart, r100Long, r100Larg, profil,
+                    p80Total, rollsTotal, casser80, rotation100Force, rotRollsPermise,
+                    cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                    bestRef
             );
         }
     }
 
-    private void repartir80DansCouloirs4(
-            int idxCol80, int K, int rest80, int remRolls,
-            int[] temp100, int[] temp80, int[] tempRolls,
-            int W, int L, int yBase,
-            int r100Long, int r100Larg, MotifTranche4 motifMixte, int rMixte, int r80Long, int rRollsLong, int rRollsLarg,
-            int nbRangsComplets, int palettesChargeesTranches, int surfaceChargeeTranches,
-            int p80BonSensTranches, int surfacePerdueTranches,
-            int rotation100Force, ProfilCouloirs4 profil, EvalSolution4[] bestRef
+    private void repartir80Transition4(
+            int idxCol, int K, int rest80, int[] temp100, int[] temp80,
+            int W, int L, int yDepart, int r100Long, int r100Larg, ProfilCouloirs4 profil,
+            int rem80AfterTrans, int rollsTotal, int casser80, int rotation100Force, boolean rotRollsPermise,
+            int cap100Long, int cap100Larg, int cap80Long, int cap80Larg, int capRollsLong, int capRollsLarg,
+            EvalSolution4[] bestRef
     ) {
-        int nbColPour80 = profil.c135 + profil.c120 + profil.c100 + profil.c80;
-        if (nbColPour80 == 0) {
-            repartirRollsDansCouloirs4(
-                    remRolls, K, temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
+        if (idxCol == K - 1) {
+            temp80[idxCol] = rest80;
+            int[] rot100 = new int[K];
+            int rotRest = Math.max(0, rotation100Force);
+            for (int k = 0; k < K; k++) {
+                int largCol = (k < profil.c120) ? 120 : ((k < profil.c120 + profil.c100) ? 100 : 80);
+                if (largCol == 120 && rotRest > 0 && temp100[k] > 0) {
+                    rot100[k] = Math.min(temp100[k], rotRest);
+                    rotRest -= rot100[k];
+                } else if (largCol < 120) {
+                    rot100[k] = temp100[k];
+                }
+            }
+            evaluerBlocP80EtRolls4(
+                    W, L, yDepart,
+                    r100Long, r100Larg,
+                    profil, temp100, rot100, temp80,
+                    rem80AfterTrans, rollsTotal, casser80, rotation100Force, rotRollsPermise,
+                    cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                    bestRef
             );
             return;
         }
 
-        if (idxCol80 == nbColPour80 - 1) {
-            temp80[idxCol80] = rest80;
-            repartirRollsDansCouloirs4(
-                    remRolls, K, temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
-            );
-            return;
-        }
-
-        // Si un couloir C100 n'est pas le dernier et qu'il y a des couloirs C80 disponibles,
-        // on autorise tout de même C100 à recevoir des P80 (en 80x120) lorsque W % 80 != 0 et W % 120 != 0 (ex: W=300)
-        boolean estCol100 = (idxCol80 >= profil.c135 + profil.c120 && idxCol80 < profil.c135 + profil.c120 + profil.c100);
+        boolean estCol100 = (idxCol >= profil.c120 && idxCol < profil.c120 + profil.c100);
         if (estCol100 && profil.c80 > 0 && (W % 80 == 0 || W % 120 == 0)) {
-            temp80[idxCol80] = 0;
-            repartir80DansCouloirs4(
-                    idxCol80 + 1, K, rest80, remRolls,
-                    temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
+            temp80[idxCol] = 0;
+            repartir80Transition4(
+                    idxCol + 1, K, rest80, temp100, temp80,
+                    W, L, yDepart, r100Long, r100Larg, profil,
+                    rem80AfterTrans, rollsTotal, casser80, rotation100Force, rotRollsPermise,
+                    cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                    bestRef
             );
             return;
         }
 
         for (int v = rest80; v >= 0; v--) {
-            temp80[idxCol80] = v;
-            repartir80DansCouloirs4(
-                    idxCol80 + 1, K, rest80 - v, remRolls,
-                    temp100, temp80, tempRolls,
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, bestRef
+            temp80[idxCol] = v;
+            repartir80Transition4(
+                    idxCol + 1, K, rest80 - v, temp100, temp80,
+                    W, L, yDepart, r100Long, r100Larg, profil,
+                    rem80AfterTrans, rollsTotal, casser80, rotation100Force, rotRollsPermise,
+                    cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                    bestRef
             );
         }
     }
 
-    private int getLargeurCouloir4(ProfilCouloirs4 profil, int k) {
-        if (k < profil.c135) return 135;
-        if (k < profil.c135 + profil.c120) return 120;
-        if (k < profil.c135 + profil.c120 + profil.c100) return 100;
-        if (k < profil.c135 + profil.c120 + profil.c100 + profil.c80) return 80;
-        return 57;
-    }
-
-    private int calculerDeltaYRollsDansCouloir4(int largCol, int nbRolls) {
-        if (nbRolls <= 0) return 0;
-        if (largCol == 135) {
-            // En couloir 135, les rolls sont posés en large (135*57), chaque roll prend 57 cm en Y
-            return nbRolls * 57;
-        } else if (largCol == 120) {
-            // En couloir 120, 2 rolls tiennent côte à côte en long (2 * 57 = 114 <= 120), chaque paire prend 135 cm en Y
-            return ((nbRolls + 1) / 2) * 135;
-        } else {
-            // En couloir 100, 80 ou 57, 1 roll en long (57*135) prend 135 cm en Y
-            return nbRolls * 135;
-        }
-    }
-
-    private void repartirRollsDansCouloirs4(
-            int remRolls, int K,
-            int[] temp100, int[] temp80, int[] tempRolls,
-            int W, int L, int yBase,
-            int r100Long, int r100Larg, MotifTranche4 motifMixte, int rMixte, int r80Long, int rRollsLong, int rRollsLarg,
-            int nbRangsComplets, int palettesChargeesTranches, int surfaceChargeeTranches,
-            int p80BonSensTranches, int surfacePerdueTranches,
-            int rotation100Force, ProfilCouloirs4 profil, EvalSolution4[] bestRef
+    private void evaluerBlocP80EtRolls4(
+            int W, int L, int yDepart,
+            int r100Long, int r100Larg,
+            ProfilCouloirs4 profilTrans100, int[] trans100, int[] trans100Rot, int[] trans80,
+            int rem80Dispo, int rollsTotal, int casser80, int rotation100Force, boolean rotRollsPermise,
+            int cap100Long, int cap100Larg, int cap80Long, int cap80Larg, int capRollsLong, int capRollsLarg,
+            EvalSolution4[] bestRef
     ) {
-        for (int k = 0; k < K; k++) {
-            tempRolls[k] = 0;
+        // Calcul de la hauteur et des métriques des Étapes 1 et 2 (P100 + Transition P100/P80)
+        int yCursor = yDepart;
+        int nbChargeesBase = 0;
+        int surfaceChargeeBase = 0;
+        int nbP80BonSensBase = 0;
+        int surfacePerdueBase = 0;
+        int nbP100EnRangsComplets = (W % 120 == 0) ? (r100Long * cap100Long + r100Larg * cap100Larg) : 0;
+
+        for (int i = 0; i < r100Long; i++) {
+            if (yCursor + 120 <= L) {
+                nbChargeesBase += cap100Long;
+                surfaceChargeeBase += cap100Long * (100 * 120);
+            }
+            surfacePerdueBase += (W - cap100Long * 100) * 120;
+            yCursor += 120;
         }
-        if (remRolls <= 0) {
-            evaluerConfigurationCouloirsComplete4(
-                    W, L, yBase,
-                    r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                    nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                    p80BonSensTranches, surfacePerdueTranches,
-                    rotation100Force, profil, temp100, temp80, tempRolls, bestRef
-            );
-            return;
+        for (int i = 0; i < r100Larg; i++) {
+            if (yCursor + 100 <= L) {
+                nbChargeesBase += cap100Larg;
+                surfaceChargeeBase += cap100Larg * (100 * 120);
+            }
+            surfacePerdueBase += (W - cap100Larg * 120) * 100;
+            yCursor += 100;
         }
 
-        // Répartition gloutonne équilibrée des Rolls (water-filling) dans les couloirs pour égaliser les longueurs Y
-        int[] yCourant = new int[K];
-        for (int k = 0; k < K; k++) {
-            int largCol = getLargeurCouloir4(profil, k);
-            int n100 = temp100[k];
-            int n80 = temp80[k];
-            int dy100 = (largCol >= 120) ? 100 : 120;
-            int dy80 = (largCol >= 120) ? 80 : 120;
-            yCourant[k] = yBase + n100 * dy100 + n80 * dy80;
-        }
+        int yApresRangs100 = yCursor;
+        int maxYTrans100 = yApresRangs100;
+        int minYTrans100 = yApresRangs100;
 
-        int rest = remRolls;
-        while (rest > 0) {
-            int bestK = -1;
-            int bestNewY = Integer.MAX_VALUE;
-            int bestPerteLat = Integer.MAX_VALUE;
+        if (profilTrans100 != null && trans100 != null) {
+            int K = profilTrans100.totalCouloirs();
+            boolean vuVide = false;
+            for (int k = 0; k < K; k++) {
+                if (trans100[k] + trans80[k] == 0) {
+                    vuVide = true;
+                } else if (vuVide) {
+                    return;
+                }
+            }
+            minYTrans100 = Integer.MAX_VALUE;
+            int sommeLargActive = 0;
+            int totalTrans = 0;
+            int[] yFinTrans = new int[K];
 
             for (int k = 0; k < K; k++) {
-                int largCol = getLargeurCouloir4(profil, k);
-                if (autorisationForcerRotationRolls && largCol != 135 && profil.c135 > 0) {
-                    continue;
-                }
-                int curR = tempRolls[k];
-                int oldDY = calculerDeltaYRollsDansCouloir4(largCol, curR);
-                int newDY = calculerDeltaYRollsDansCouloir4(largCol, curR + 1);
-                int newY = (yCourant[k] - oldDY) + newDY;
+                int largCol = (k < profilTrans100.c120) ? 120 : ((k < profilTrans100.c120 + profilTrans100.c100) ? 100 : 80);
+                int n100 = trans100[k];
+                int n100Rot = trans100Rot[k];
+                int n100Norm = n100 - n100Rot;
+                int n80 = trans80[k];
 
-                int perteLat;
-                if (largCol == 57) {
-                    perteLat = 0;
-                } else if (largCol == 135) {
-                    perteLat = 0;
-                } else if (largCol == 120) {
-                    perteLat = 6; // 120 - 114
-                } else {
-                    perteLat = largCol - 57;
+                totalTrans += (n100 + n80);
+                if (n100 + n80 > 0) {
+                    sommeLargActive += largCol;
                 }
 
-                // Privilégier d'abord les couloirs dédiés aux rolls (57, 135, ou 120 par paire) qui restent dans la remorque
-                int score = newY + perteLat * 2;
-                if (score < bestNewY || (score == bestNewY && perteLat < bestPerteLat)) {
-                    bestNewY = score;
-                    bestPerteLat = perteLat;
-                    bestK = k;
+                int dy100Norm = 100;
+                int dy100Rot = 120;
+                int dy80 = (largCol == 120) ? 80 : 120;
+
+                if (largCol == 120 && n100Rot > 0 && !autorisationForcerRotation100) {
+                    surfacePerdueBase += n100Rot * (120 - 100) * 120;
+                }
+                if (largCol == 100 && n80 > 0 && (W % 80 == 0 || W % 120 == 0)) {
+                    surfacePerdueBase += n80 * (100 - 80) * 120;
+                }
+
+                int hCol = n100Norm * dy100Norm + n100Rot * dy100Rot + n80 * dy80;
+                int yFin = yApresRangs100 + hCol;
+                yFinTrans[k] = yFin;
+                if (yFin > maxYTrans100) maxYTrans100 = yFin;
+                if (yFin < minYTrans100) minYTrans100 = yFin;
+
+                int dispoY = Math.max(0, L - yApresRangs100);
+                int yLocal = 0;
+                int in100Norm = Math.min(n100Norm, (dispoY - yLocal) / dy100Norm);
+                yLocal += in100Norm * dy100Norm;
+                int in100Rot = Math.min(n100Rot, (dispoY - yLocal) / dy100Rot);
+                yLocal += in100Rot * dy100Rot;
+                int in80 = Math.min(n80, (dispoY - yLocal) / dy80);
+
+                nbChargeesBase += (in100Norm + in100Rot + in80);
+                surfaceChargeeBase += (in100Norm + in100Rot) * (100 * 120) + in80 * (80 * 120);
+                if (largCol < 120) {
+                    nbP80BonSensBase += in80;
                 }
             }
-
-            if (bestK < 0) {
-                bestK = K - 1;
+            if (minYTrans100 == Integer.MAX_VALUE) minYTrans100 = yApresRangs100;
+            if (totalTrans > 1) {
+                surfacePerdueBase += Math.max(0, W - sommeLargActive) * Math.max(0, maxYTrans100 - yApresRangs100);
             }
-            int largCol = getLargeurCouloir4(profil, bestK);
-            int oldDY = calculerDeltaYRollsDansCouloir4(largCol, tempRolls[bestK]);
-            tempRolls[bestK]++;
-            int newDY = calculerDeltaYRollsDansCouloir4(largCol, tempRolls[bestK]);
-            yCourant[bestK] = (yCourant[bestK] - oldDY) + newDY;
-            rest--;
+            for (int k = 0; k < K; k++) {
+                int largCol = (k < profilTrans100.c120) ? 120 : ((k < profilTrans100.c120 + profilTrans100.c100) ? 100 : 80);
+                if (trans100[k] + trans80[k] > 0) {
+                    surfacePerdueBase += Math.max(0, maxYTrans100 - yFinTrans[k]) * largCol;
+                }
+            }
         }
 
-        evaluerConfigurationCouloirsComplete4(
-                W, L, yBase,
-                r100Long, r100Larg, motifMixte, rMixte, r80Long, rRollsLong, rRollsLarg,
-                nbRangsComplets, palettesChargeesTranches, surfaceChargeeTranches,
-                p80BonSensTranches, surfacePerdueTranches,
-                rotation100Force, profil, temp100, temp80, tempRolls, bestRef
-        );
+        int yBaseP80 = maxYTrans100;
+
+        // Étape 3 : Rangs complets de P80 (r80Long en 80*120, puis r80Larg en 120*80)
+        int maxR80Possible = (cap80Long > 0) ? (rem80Dispo / cap80Long) : 0;
+        int maxR80Autorise = Math.max(0, maxR80Possible - casser80);
+        int minR80Long = Math.max(0, maxR80Autorise - 2);
+        if (W % 80 != 0) {
+            minR80Long = 0;
+        }
+
+        for (int r80Long = minR80Long; r80Long <= maxR80Autorise; r80Long++) {
+            int rem80AfterLong = rem80Dispo - r80Long * cap80Long;
+            // En W=240, 3 rangs de 2 P80 en large (240 cm) équivalent à 2 rangs de 3 P80 en long (240 cm),
+            // donc r80Larg n'a besoin de varier qu'entre 0 et 2 (ou plus si casser80 > 0 ou autorisationRangBatard80).
+            int maxR80LargPossible = (cap80Larg > 0) ? (rem80AfterLong / cap80Larg) : 0;
+            int maxR80LargUtile = (W % 80 == 0 && casser80 == 0 && !autorisationRangBatard80)
+                    ? Math.min(maxR80LargPossible, 2)
+                    : maxR80LargPossible;
+
+            for (int r80Larg = 0; r80Larg <= maxR80LargUtile; r80Larg++) {
+                int rem80Tail = rem80AfterLong - r80Larg * cap80Larg;
+
+                int yCur80 = yBaseP80;
+                int nbChargeesAfter80 = nbChargeesBase;
+                int surfaceChargeeAfter80 = surfaceChargeeBase;
+                int nbP80BonSensAfter80 = nbP80BonSensBase;
+                int surfacePerdueAfter80 = surfacePerdueBase;
+
+                for (int i = 0; i < r80Long; i++) {
+                    if (yCur80 + 120 <= L) {
+                        nbChargeesAfter80 += cap80Long;
+                        surfaceChargeeAfter80 += cap80Long * (80 * 120);
+                        nbP80BonSensAfter80 += cap80Long;
+                    }
+                    surfacePerdueAfter80 += (W - cap80Long * 80) * 120;
+                    yCur80 += 120;
+                }
+                for (int i = 0; i < r80Larg; i++) {
+                    if (yCur80 + 80 <= L) {
+                        nbChargeesAfter80 += cap80Larg;
+                        surfaceChargeeAfter80 += cap80Larg * (80 * 120);
+                    }
+                    surfacePerdueAfter80 += (W - cap80Larg * 120) * 80;
+                    yCur80 += 80;
+                }
+
+                // Étape 4 : Transition P80 / Rolls + Zone finale Rolls
+                // On teste combien de P80 du reliquat rem80Tail on place dans la zone de transition P80/Rolls
+                // (les éventuelles P80 qui ne rentrent pas dans la remorque iront à quai en Étape 6,
+                // ce qui permet aux Rolls de prendre la place restante avant les portes si une P80 ne rentre plus !)
+                int maxM80Tail = Math.min(rem80Tail, 4);
+                for (int m80 = 0; m80 <= maxM80Tail; m80++) {
+                    if (m80 < rem80Tail && yCur80 + 80 <= L && rollsTotal == 0) {
+                        // S'il n'y a pas de Rolls et qu'il reste de la place, on tente toujours de poser toutes les P80
+                        continue;
+                    }
+                    evaluerTransitionP80EtRolls4(
+                            W, L, yCur80,
+                            r100Long, r100Larg, profilTrans100, trans100, trans100Rot, trans80,
+                            r80Long, r80Larg,
+                            m80, rollsTotal, rotRollsPermise,
+                            nbChargeesAfter80, surfaceChargeeAfter80, nbP100EnRangsComplets,
+                            nbP80BonSensAfter80, surfacePerdueAfter80,
+                            cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                            minYTrans100, maxYTrans100,
+                            bestRef
+                    );
+                }
+            }
+        }
     }
 
-    private void evaluerConfigurationCouloirsComplete4(
-            int W, int L, int yBase,
-            int r100Long, int r100Larg, MotifTranche4 motifMixte, int rMixte, int r80Long, int rRollsLong, int rRollsLarg,
-            int nbRangsComplets, int palettesChargeesTranches, int surfaceChargeeTranches,
-            int p80BonSensTranches, int surfacePerdueTranches,
-            int rotation100Force, ProfilCouloirs4 profil,
-            int[] temp100, int[] temp80, int[] tempRolls, EvalSolution4[] bestRef
+    private void evaluerTransitionP80EtRolls4(
+            int W, int L, int yBaseTail,
+            int r100Long, int r100Larg,
+            ProfilCouloirs4 profilTrans100, int[] trans100, int[] trans100Rot, int[] trans80,
+            int r80Long, int r80Larg,
+            int m80, int rollsTotal, boolean rotRollsPermise,
+            int nbChargeesAfter80, int surfaceChargeeAfter80, int nbP100EnRangsComplets,
+            int nbP80BonSensAfter80, int surfacePerdueAfter80,
+            int cap100Long, int cap100Larg, int cap80Long, int cap80Larg, int capRollsLong, int capRollsLarg,
+            int minYTrans100, int maxYTrans100,
+            EvalSolution4[] bestRef
     ) {
-        int K = profil.totalCouloirs();
+        // Modes de placement des m80 dernières P80 à gauche :
+        // mode 0 : m80 == 0
+        // mode 1 : 1 couloir 80 cm (m80 en 80*120)
+        // mode 2 : 2 couloirs 80 cm (col0 et col1 en 80*120)
+        // mode 3 : 1 couloir 120 cm (m80 en 120*80)
+        // mode 4 : 1 couloir 120 cm (col0 en 120*80) + 1 couloir 80 cm (col1 en 80*120)
+        int minMode = (m80 == 0) ? 0 : 1;
+        int maxMode = (m80 == 0) ? 0 : 4;
 
-        boolean vuCouloirVide = false;
-        for (int k = 0; k < K; k++) {
-            if (temp100[k] + temp80[k] + tempRolls[k] == 0) {
-                vuCouloirVide = true;
-            } else if (vuCouloirVide) {
-                return;
-            }
-        }
+        for (int mode = minMode; mode <= maxMode; mode++) {
+            int wP80 = 0;
+            int col0 = 0;
+            int col1 = 0;
+            int hCol0 = 0;
+            int hCol1 = 0;
 
-        int nbChargees = palettesChargeesTranches;
-        int surfaceChargee = surfaceChargeeTranches;
-        int nbP80BonSens = p80BonSensTranches;
-        int surfacePerdueInternes = 0;
-        int maxY = yBase;
-        int minY = Integer.MAX_VALUE;
-
-        int[] rot100ParCol = new int[K];
-        int rotRestant = Math.max(0, rotation100Force);
-
-        int[] yFinCol = new int[K];
-        int sommeLargeurActive = 0;
-        int totalElementsCouloirs = 0;
-
-        for (int k = 0; k < K; k++) {
-            int largCol = getLargeurCouloir4(profil, k);
-            int n100 = temp100[k];
-            int n80 = temp80[k];
-            int nRolls = tempRolls[k];
-
-            totalElementsCouloirs += (n100 + n80 + nRolls);
-            if (n100 + n80 + nRolls > 0) {
-                sommeLargeurActive += largCol;
-            }
-
-            int n100Rot = 0;
-            if (largCol >= 120 && rotRestant > 0 && n100 > 0) {
-                n100Rot = Math.min(n100, rotRestant);
-                rotRestant -= n100Rot;
-            } else if (largCol < 120) {
-                n100Rot = n100;
-            }
-            rot100ParCol[k] = n100Rot;
-            int n100Norm = n100 - n100Rot;
-
-            int dy100Norm = 100;
-            int dy100Rot = 120;
-            int dy80 = (largCol >= 120) ? 80 : 120;
-            int dyRollsTotal = calculerDeltaYRollsDansCouloir4(largCol, nRolls);
-
-            if (largCol == 135) {
-                surfacePerdueInternes += n100Norm * (135 - 120) * 100 + n100Rot * (135 - 100) * 120;
-                surfacePerdueInternes += n80 * (135 - 120) * 80;
-            } else if (largCol == 120) {
-                if (n100Rot > 0 && !autorisationForcerRotation100) {
-                    surfacePerdueInternes += n100Rot * (120 - 100) * 120;
-                }
-                if (nRolls > 0) {
-                    int nbPaires = nRolls / 2;
-                    int resteRoll = nRolls % 2;
-                    surfacePerdueInternes += nbPaires * (120 - 114) * 135 + resteRoll * (120 - 57) * 135;
-                }
-            } else if (largCol == 100) {
-                // Pour W = 300 (non multiple de 80 et 120), C100 fait partie de la décomposition 120+100+80=300 :
-                // mettre des P80 en long dans C100 évite de tourner les P100 en long dans C100 et permet aux P100 d'être en large dans C120
-                if (n80 > 0 && (W % 80 == 0 || W % 120 == 0)) {
-                    surfacePerdueInternes += n80 * (100 - 80) * 120;
-                }
-                if (nRolls > 0) {
-                    surfacePerdueInternes += nRolls * (100 - 57) * 135;
-                }
-            } else if (largCol == 80) {
-                if (nRolls > 0) {
-                    surfacePerdueInternes += nRolls * (80 - 57) * 135;
-                }
+            if (mode == 0) {
+                wP80 = 0;
+            } else if (mode == 1) {
+                if (W < 80) continue;
+                wP80 = 80;
+                col0 = m80;
+                hCol0 = col0 * 120;
+            } else if (mode == 2) {
+                if (m80 < 2 || W < 160) continue;
+                wP80 = 160;
+                col0 = (m80 + 1) / 2;
+                col1 = m80 / 2;
+                hCol0 = col0 * 120;
+                hCol1 = col1 * 120;
+            } else if (mode == 3) {
+                if (W < 120) continue;
+                wP80 = 120;
+                col0 = m80;
+                hCol0 = col0 * 80;
+            } else if (mode == 4) {
+                if (m80 < 2 || W < 200) continue;
+                wP80 = 200;
+                col0 = m80 - 1;
+                col1 = 1;
+                hCol0 = col0 * 80;
+                hCol1 = col1 * 120;
             }
 
-            int hCol = n100Norm * dy100Norm + n100Rot * dy100Rot + n80 * dy80 + dyRollsTotal;
-            int yFin = yBase + hCol;
-            yFinCol[k] = yFin;
-
-            if (yFin > maxY) {
-                maxY = yFin;
-            }
-            if (yFin < minY) {
-                minY = yFin;
+            int hP80Max = Math.max(hCol0, hCol1);
+            // Si une partie des m80 dépasse L, ce mode est inutile car un m80 plus petit est déjà testé
+            if (m80 > 0 && yBaseTail + hP80Max > L) {
+                continue;
             }
 
-            int dispoY = Math.max(0, L - yBase);
-            if (hCol <= dispoY) {
-                nbChargees += (n100 + n80 + nRolls);
-                surfaceChargee += n100 * (100 * 120) + n80 * (80 * 120) + nRolls * (57 * 135);
-                if (largCol < 120) {
-                    nbP80BonSens += n80;
-                }
-            } else if (dispoY > 0) {
-                // Calcul exact du nombre d'éléments qui rentrent dans dispoY
-                int yCur = 0;
-                int in100Norm = Math.min(n100Norm, (dispoY - yCur) / dy100Norm);
-                yCur += in100Norm * dy100Norm;
-                int in100Rot = Math.min(n100Rot, (dispoY - yCur) / dy100Rot);
-                yCur += in100Rot * dy100Rot;
-                int in80 = Math.min(n80, (dispoY - yCur) / dy80);
-                yCur += in80 * dy80;
-                int inRolls = 0;
-                int remDispo = dispoY - yCur;
-                if (nRolls > 0 && remDispo > 0) {
-                    if (largCol == 135) {
-                        inRolls = Math.min(nRolls, remDispo / 57);
-                    } else if (largCol == 120) {
-                        int pairesRentrees = remDispo / 135;
-                        inRolls = Math.min(nRolls, pairesRentrees * 2);
-                    } else {
-                        inRolls = Math.min(nRolls, remDispo / 135);
+            int p80BonSensTail = 0;
+            if (mode == 1) p80BonSensTail = col0;
+            else if (mode == 2) p80BonSensTail = col0 + col1;
+            else if (mode == 4) p80BonSensTail = col1;
+
+            int wDroite = W - wP80;
+            int capDrLong = (wP80 > 0) ? (wDroite / 57) : 0;
+            int capDrLarg = (wP80 > 0 && rotRollsPermise) ? (wDroite / 135) : 0;
+
+            int maxDrModes = (wP80 == 0 || rollsTotal == 0) ? 0 : 2;
+            for (int drMode = 0; drMode <= maxDrModes; drMode++) {
+                int capDr = (drMode == 1) ? capDrLong : ((drMode == 2) ? capDrLarg : 0);
+                int dyDr = (drMode == 1) ? 135 : 57;
+                if (drMode > 0 && capDr == 0) continue;
+
+                // Nombre maximum de Rolls qu'on peut loger à droite des m80 P80
+                int maxRangsDr = (drMode == 0) ? 0 : Math.min(4, Math.max(1, (hP80Max + dyDr - 1) / dyDr) + 1);
+                int maxRollsDr = Math.min(rollsTotal, maxRangsDr * capDr);
+
+                for (int nRollsDr = 0; nRollsDr <= maxRollsDr; nRollsDr++) {
+                    if (drMode > 0 && nRollsDr == 0) continue;
+                    int rangsDr = (drMode == 0 || capDr == 0) ? 0 : ((nRollsDr + capDr - 1) / capDr);
+                    int hDr = rangsDr * dyDr;
+                    if (yBaseTail + hDr > L) continue;
+
+                    int remRollsAfterDr = rollsTotal - nRollsDr;
+
+                    // Peut-on glisser des Rolls sous les P80 de gauche (si wP80 >= 135 en large ou >= 57 en long)
+                    // pour combler le décrochement ou la fin de remorque ?
+                    int maxSousModes = (wP80 > 0 && remRollsAfterDr > 0) ? 2 : 0;
+                    for (int sousMode = 0; sousMode <= maxSousModes; sousMode++) {
+                        int capSous = 0;
+                        int dySous = 0;
+                        if (sousMode == 1) {
+                            capSous = wP80 / 57;
+                            dySous = 135;
+                        } else if (sousMode == 2 && rotRollsPermise) {
+                            capSous = wP80 / 135;
+                            dySous = 57;
+                        }
+                        if (sousMode > 0 && capSous == 0) continue;
+
+                        int dispoSousY = Math.max(0, L - (yBaseTail + hP80Max));
+                        int maxRangsSous = (sousMode == 0) ? 0 : Math.min(2, dispoSousY / dySous);
+                        int maxRollsSous = Math.min(remRollsAfterDr, maxRangsSous * capSous);
+
+                        for (int nRollsSous = 0; nRollsSous <= maxRollsSous; nRollsSous++) {
+                            if (sousMode > 0 && nRollsSous == 0) continue;
+                            int rangsSous = (sousMode == 0 || capSous == 0) ? 0 : ((nRollsSous + capSous - 1) / capSous);
+                            int hSous = rangsSous * dySous;
+
+                            int yGaucheFin = yBaseTail + hP80Max + hSous;
+                            int yDroiteFin = yBaseTail + hDr;
+                            int yBaseFullRolls = Math.max(yGaucheFin, yDroiteFin);
+
+                            int remRollsFull = remRollsAfterDr - nRollsSous;
+
+                            // Étape 5 : Placement des Rolls restants (remRollsFull) sur toute la largeur W à partir de yBaseFullRolls
+                            evaluerZoneFinaleRolls4(
+                                    W, L, yBaseTail, yGaucheFin, yDroiteFin, yBaseFullRolls,
+                                    r100Long, r100Larg, profilTrans100, trans100, trans100Rot, trans80,
+                                    r80Long, r80Larg,
+                                    mode, col0, col1, wP80, hCol0, hCol1,
+                                    drMode, nRollsDr, hDr,
+                                    sousMode, nRollsSous, hSous,
+                                    m80, p80BonSensTail, remRollsFull, rotRollsPermise,
+                                    nbChargeesAfter80, surfaceChargeeAfter80, nbP100EnRangsComplets,
+                                    nbP80BonSensAfter80, surfacePerdueAfter80,
+                                    cap100Long, cap100Larg, cap80Long, cap80Larg, capRollsLong, capRollsLarg,
+                                    minYTrans100, maxYTrans100,
+                                    bestRef
+                            );
+                        }
                     }
                 }
-                nbChargees += (in100Norm + in100Rot + in80 + inRolls);
-                surfaceChargee += (in100Norm + in100Rot) * (100 * 120) + in80 * (80 * 120) + inRolls * (57 * 135);
-                if (largCol < 120) {
-                    nbP80BonSens += in80;
-                }
             }
         }
+    }
 
-        if (minY == Integer.MAX_VALUE) {
-            minY = yBase;
-        }
-        int ecart = maxY - minY;
-        int surfacePerdueDroiteCouloirs = 0;
-        if (totalElementsCouloirs > 1) {
-            surfacePerdueDroiteCouloirs = Math.max(0, W - sommeLargeurActive) * Math.max(0, maxY - yBase);
-        }
+    private void evaluerZoneFinaleRolls4(
+            int W, int L, int yBaseTail, int yGaucheFin, int yDroiteFin, int yBaseFullRolls,
+            int r100Long, int r100Larg,
+            ProfilCouloirs4 profilTrans100, int[] trans100, int[] trans100Rot, int[] trans80,
+            int r80Long, int r80Larg,
+            int modeP80Tail, int col0, int col1, int wP80, int hCol0, int hCol1,
+            int drMode, int nRollsDr, int hDr,
+            int sousMode, int nRollsSous, int hSous,
+            int m80, int p80BonSensTail, int remRollsFull, boolean rotRollsPermise,
+            int nbChargeesAfter80, int surfaceChargeeAfter80, int nbP100EnRangsComplets,
+            int nbP80BonSensAfter80, int surfacePerdueAfter80,
+            int cap100Long, int cap100Larg, int cap80Long, int cap80Larg, int capRollsLong, int capRollsLarg,
+            int minYTrans100, int maxYTrans100,
+            EvalSolution4[] bestRef
+    ) {
+        int dispoY = Math.max(0, L - yBaseFullRolls);
+        int maxRRollsLong = (capRollsLong > 0 && !autorisationForcerRotationRolls)
+                ? Math.min(remRollsFull / capRollsLong, dispoY / 135)
+                : 0;
 
-        int surfacePerdueCreux = 0;
-        int surfacePerdueBout = 0;
-        for (int k = 0; k < K; k++) {
-            int largCol = getLargeurCouloir4(profil, k);
-            int n100 = temp100[k];
-            int n80 = temp80[k];
-            int nRolls = tempRolls[k];
-            if (n100 + n80 + nRolls > 0) {
-                int creuxCol = Math.max(0, (maxY - yFinCol[k]) - 160);
-                surfacePerdueCreux += creuxCol * largCol;
-                if (yFinCol[k] <= L) {
-                    int pasMinCol = (largCol == 135) ? 57 : ((largCol == 120) ? 80 : 120);
-                    int resteCol = L - yFinCol[k];
-                    if (resteCol > 0 && resteCol < pasMinCol) {
-                        surfacePerdueBout += resteCol * largCol;
+        for (int rRollsLong = 0; rRollsLong <= maxRRollsLong; rRollsLong++) {
+            int remAfterLong = remRollsFull - rRollsLong * capRollsLong;
+            int yAfterLong = yBaseFullRolls + rRollsLong * 135;
+            int dispoAfterLong = Math.max(0, L - yAfterLong);
+
+            int maxRRollsLarg = (capRollsLarg > 0 && rotRollsPermise)
+                    ? Math.min(remAfterLong / capRollsLarg, dispoAfterLong / 57)
+                    : 0;
+
+            for (int rRollsLarg = 0; rRollsLarg <= maxRRollsLarg; rRollsLarg++) {
+                int remFinal = remAfterLong - rRollsLarg * capRollsLarg;
+                int yAfterLarg = yAfterLong + rRollsLarg * 57;
+                int dispoFinal = Math.max(0, L - yAfterLarg);
+
+                // Pour les derniers Rolls hors rang complet (remFinal < capRollsLong), on teste en long (57*135) et en large (135*57)
+                int maxFinalMode = rotRollsPermise ? 2 : 1;
+                for (int finalMode = 1; finalMode <= maxFinalMode; finalMode++) {
+                    if (autorisationForcerRotationRolls && finalMode == 1 && rotRollsPermise && capRollsLarg > 0) {
+                        continue;
+                    }
+                    int capFinal = (finalMode == 1) ? capRollsLong : capRollsLarg;
+                    int dyFinal = (finalMode == 1) ? 135 : 57;
+                    int nFinalRentres = 0;
+                    int hFinal = 0;
+                    if (remFinal > 0 && capFinal > 0 && dispoFinal >= dyFinal) {
+                        int maxRangsFin = dispoFinal / dyFinal;
+                        nFinalRentres = Math.min(remFinal, maxRangsFin * capFinal);
+                        int rangsFin = (nFinalRentres + capFinal - 1) / capFinal;
+                        hFinal = rangsFin * dyFinal;
+                    }
+
+                    int rollsCharges = nRollsDr + nRollsSous + rRollsLong * capRollsLong + rRollsLarg * capRollsLarg + nFinalRentres;
+                    int nbChargees = nbChargeesAfter80 + m80 + rollsCharges;
+                    int surfaceChargee = surfaceChargeeAfter80 + m80 * (80 * 120) + rollsCharges * (57 * 135);
+                    int nbP80BonSens = nbP80BonSensAfter80 + p80BonSensTail;
+
+                    int rollsEnLong = ((drMode == 1) ? nRollsDr : 0)
+                            + ((sousMode == 1) ? nRollsSous : 0)
+                            + rRollsLong * capRollsLong
+                            + ((finalMode == 1) ? nFinalRentres : 0);
+                    int rollsEnLarge = rollsCharges - rollsEnLong;
+                    int nbRollsSensVoulu = autorisationForcerRotationRolls ? rollsEnLarge : rollsEnLong;
+
+                    // Calcul de la surface perdue et des longueurs finales
+                    int surfacePerdueTail = 0;
+                    if (m80 > 0 || nRollsDr > 0 || nRollsSous > 0) {
+                        int wDrUsed = 0;
+                        if (nRollsDr > 0) {
+                            int nbColsDr = (drMode == 1) ? Math.min(nRollsDr, W - wP80 >= 57 ? (W - wP80) / 57 : 1) : 1;
+                            wDrUsed = (drMode == 1) ? (nbColsDr * 57) : 135;
+                        }
+                        int wTotalTail = wP80 + wDrUsed;
+                        int hZoneTail = yBaseFullRolls - yBaseTail;
+                        if (m80 + nRollsDr > 1) {
+                            surfacePerdueTail += Math.max(0, W - wTotalTail) * hZoneTail;
+                        }
+                        surfacePerdueTail += Math.abs(yGaucheFin - yDroiteFin) * Math.min(wP80 > 0 ? wP80 : W, wDrUsed > 0 ? wDrUsed : W);
+                        if (modeP80Tail == 2 && hCol0 != hCol1) {
+                            surfacePerdueTail += Math.abs(hCol0 - hCol1) * 80;
+                        } else if (modeP80Tail == 4 && hCol0 != hCol1) {
+                            surfacePerdueTail += Math.abs(hCol0 - hCol1) * 80;
+                        }
+                    }
+
+                    if (rRollsLong > 0) {
+                        surfacePerdueTail += rRollsLong * (W - capRollsLong * 57) * 135;
+                    }
+                    if (rRollsLarg > 0) {
+                        surfacePerdueTail += rRollsLarg * (W - capRollsLarg * 135) * 57;
+                    }
+                    if (nFinalRentres > 0) {
+                        int wElem = (finalMode == 1) ? 57 : 135;
+                        int parRang = Math.min(nFinalRentres, capFinal);
+                        surfacePerdueTail += (W - parRang * wElem) * hFinal;
+                    }
+
+                    int maxYCharge = yAfterLarg + hFinal;
+                    int ecart = Math.abs(yGaucheFin - yDroiteFin);
+                    if (rRollsLong == 0 && rRollsLarg == 0 && nFinalRentres == 0 && m80 == 0 && nRollsDr == 0 && nRollsSous == 0) {
+                        ecart = maxYTrans100 - minYTrans100;
+                    }
+
+                    int nbRangsComplets = r100Long + r100Larg + r80Long + r80Larg + rRollsLong + rRollsLarg;
+
+                    EvalSolution4 cand = new EvalSolution4();
+                    cand.nbPalettesChargees = nbChargees;
+                    cand.surfaceChargee = surfaceChargee;
+                    cand.nbP100EnRangsComplets = nbP100EnRangsComplets;
+                    cand.surfacePerdueFond = surfacePerdueAfter80 + surfacePerdueTail;
+                    cand.nbP80BonSens = nbP80BonSens;
+                    cand.nbRollsSensVoulu = nbRollsSensVoulu;
+                    cand.maxYCharge = maxYCharge;
+                    cand.ecartCouloirs = ecart;
+                    cand.nbRangsComplets = nbRangsComplets;
+
+                    if (cand.estMeilleureQue(bestRef[0])) {
+                        cand.r100Long = r100Long;
+                        cand.r100Larg = r100Larg;
+                        if (profilTrans100 != null && trans100 != null) {
+                            int K = profilTrans100.totalCouloirs();
+                            cand.profilTrans100 = profilTrans100;
+                            cand.transCol100 = new int[K];
+                            cand.transCol100Rot = new int[K];
+                            cand.transCol80 = new int[K];
+                            cand.transColLargeur = new int[K];
+                            cand.transColXStart = new int[K];
+                            int xCur = 0;
+                            for (int k = 0; k < K; k++) {
+                                int largCol = (k < profilTrans100.c120) ? 120 : ((k < profilTrans100.c120 + profilTrans100.c100) ? 100 : 80);
+                                cand.transCol100[k] = trans100[k];
+                                cand.transCol100Rot[k] = trans100Rot[k];
+                                cand.transCol80[k] = trans80[k];
+                                cand.transColLargeur[k] = largCol;
+                                cand.transColXStart[k] = xCur;
+                                xCur += largCol;
+                            }
+                        }
+                        cand.r80Long = r80Long;
+                        cand.r80Larg = r80Larg;
+                        cand.modeP80Tail = modeP80Tail;
+                        cand.tail80Col0 = col0;
+                        cand.tail80Col1 = col1;
+                        cand.rollsDroiteMode = drMode;
+                        cand.rollsDroiteCount = nRollsDr;
+                        cand.rollsSousP80Mode = sousMode;
+                        cand.rollsSousP80Count = nRollsSous;
+                        cand.rRollsLong = rRollsLong;
+                        cand.rRollsLarg = rRollsLarg;
+                        cand.remRollsFinalMode = finalMode;
+                        cand.remRollsFinalCount = nFinalRentres;
+                        bestRef[0] = cand;
                     }
                 }
             }
-        }
-
-        int surfacePerdueTotaleFond = surfacePerdueTranches
-                + surfacePerdueInternes
-                + surfacePerdueDroiteCouloirs
-                + surfacePerdueCreux
-                + surfacePerdueBout;
-
-        int rangA = yFinCol[0];
-        int rangB = (K >= 2) ? yFinCol[1] : yBase;
-        if (K > 2) {
-            rangA = yBase;
-            rangB = yBase;
-            for (int k = 0; k < K; k++) {
-                if (k < K / 2) {
-                    rangA = Math.max(rangA, yFinCol[k]);
-                } else {
-                    rangB = Math.max(rangB, yFinCol[k]);
-                }
-            }
-        }
-
-        EvalSolution4 cand = new EvalSolution4();
-        cand.nbPalettesChargees = nbChargees;
-        cand.surfaceChargee = surfaceChargee;
-        cand.surfacePerdueFond = surfacePerdueTotaleFond;
-        cand.nbP80BonSens = nbP80BonSens;
-        cand.maxY = maxY;
-        cand.ecartCouloirs = ecart;
-        cand.nbRangsComplets = nbRangsComplets;
-        cand.rangA = rangA;
-        cand.rangB = rangB;
-
-        if (cand.estMeilleureQue(bestRef[0])) {
-            cand.r100Long = r100Long;
-            cand.r100Larg = r100Larg;
-            cand.motifMixte = motifMixte;
-            cand.rMixte = rMixte;
-            cand.r80Long = r80Long;
-            cand.rRollsLong = rRollsLong;
-            cand.rRollsLarg = rRollsLarg;
-            cand.profilCouloirs = profil;
-            cand.col100Count = new int[K];
-            cand.col100RotCount = new int[K];
-            cand.col80Count = new int[K];
-            cand.colRollsCount = new int[K];
-            cand.colLargeur = new int[K];
-            cand.colXStart = new int[K];
-
-            int xCur = 0;
-            for (int k = 0; k < K; k++) {
-                int largCol = getLargeurCouloir4(profil, k);
-                cand.col100Count[k] = temp100[k];
-                cand.col100RotCount[k] = rot100ParCol[k];
-                cand.col80Count[k] = temp80[k];
-                cand.colRollsCount[k] = tempRolls[k];
-                cand.colLargeur[k] = largCol;
-                cand.colXStart[k] = xCur;
-                xCur += largCol;
-            }
-            bestRef[0] = cand;
         }
     }
 
@@ -3373,14 +3341,18 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             ArrayList<Palette> poolRolls,
             ArrayList<Palette> sortie,
             int yDepart, int W, int L,
-            int cap100Long, int cap100Larg, int cap80Long, int capRollsLong, int capRollsLarg
+            int cap100Long, int cap100Larg, int cap80Long, int cap80Larg, int capRollsLong, int capRollsLarg
     ) {
         int idx100 = 0;
         int idx80 = 0;
         int idxRolls = 0;
         int yCur = yDepart;
+        int yGauche = yDepart;
+        int yDroite = yDepart;
 
+        // 1. Rangs complets P100
         for (int r = 0; r < sol.r100Long; r++) {
+            if (yCur + 120 > L) break;
             for (int c = 0; c < cap100Long && idx100 < pool100.size(); c++) {
                 Palette p = pool100.get(idx100++);
                 p.setPositionX(c * 100);
@@ -3390,8 +3362,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             }
             yCur += 120;
         }
-
         for (int r = 0; r < sol.r100Larg; r++) {
+            if (yCur + 100 > L) break;
             for (int c = 0; c < cap100Larg && idx100 < pool100.size(); c++) {
                 Palette p = pool100.get(idx100++);
                 p.setPositionX(c * 120);
@@ -3401,39 +3373,71 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             }
             yCur += 100;
         }
+        yGauche = yCur;
+        yDroite = yCur;
 
-        if (sol.motifMixte != null && sol.rMixte > 0) {
-            for (int r = 0; r < sol.rMixte; r++) {
-                int xCur = 0;
-                for (int c = 0; c < sol.motifMixte.nb100 && idx100 < pool100.size(); c++) {
+        // 2. Zone de transition P100 / P80 (si présente)
+        if (sol.profilTrans100 != null && sol.transColLargeur != null) {
+            int K = sol.transColLargeur.length;
+            int yBaseTrans = yCur;
+            int maxYTrans = yBaseTrans;
+            yGauche = yBaseTrans;
+            yDroite = yBaseTrans;
+
+            for (int k = 0; k < K; k++) {
+                int xCol = sol.transColXStart[k];
+                int largCol = sol.transColLargeur[k];
+                int n100 = sol.transCol100[k];
+                int n100Rot = sol.transCol100Rot[k];
+                int n100Norm = n100 - n100Rot;
+                int n80 = sol.transCol80[k];
+
+                int dy100Norm = 100;
+                int dy100Rot = 120;
+                int dy80 = (largCol == 120) ? 80 : 120;
+                int orient80 = (largCol == 120) ? 1 : 0;
+
+                int yCol = yBaseTrans;
+                for (int i = 0; i < n100Norm && idx100 < pool100.size(); i++) {
+                    if (yCol + dy100Norm > L) break;
                     Palette p = pool100.get(idx100++);
-                    p.setPositionX(xCur);
-                    p.setPositionY(yCur);
+                    p.setPositionX(xCol);
+                    p.setPositionY(yCol);
+                    p.setOrientation(1);
+                    sortie.add(p);
+                    yCol += dy100Norm;
+                }
+                for (int i = 0; i < n100Rot && idx100 < pool100.size(); i++) {
+                    if (yCol + dy100Rot > L) break;
+                    Palette p = pool100.get(idx100++);
+                    p.setPositionX(xCol);
+                    p.setPositionY(yCol);
                     p.setOrientation(0);
                     sortie.add(p);
-                    xCur += 100;
+                    yCol += dy100Rot;
                 }
-                for (int c = 0; c < sol.motifMixte.nb80 && idx80 < pool80.size(); c++) {
+                for (int i = 0; i < n80 && idx80 < pool80.size(); i++) {
+                    if (yCol + dy80 > L) break;
                     Palette p = pool80.get(idx80++);
-                    p.setPositionX(xCur);
-                    p.setPositionY(yCur);
-                    p.setOrientation(0);
+                    p.setPositionX(xCol);
+                    p.setPositionY(yCol);
+                    p.setOrientation(orient80);
                     sortie.add(p);
-                    xCur += 80;
+                    yCol += dy80;
                 }
-                for (int c = 0; c < sol.motifMixte.nbRolls && idxRolls < poolRolls.size(); c++) {
-                    Palette p = poolRolls.get(idxRolls++);
-                    p.setPositionX(xCur);
-                    p.setPositionY(yCur);
-                    p.setOrientation(0);
-                    sortie.add(p);
-                    xCur += 57;
+                if (yCol > maxYTrans) maxYTrans = yCol;
+                if (k == 0 || (K > 2 && k < K / 2)) {
+                    yGauche = Math.max(yGauche, yCol);
+                } else {
+                    yDroite = Math.max(yDroite, yCol);
                 }
-                yCur += sol.motifMixte.deltaY;
             }
+            yCur = maxYTrans;
         }
 
+        // 3. Rangs complets P80 (en long 80*120, puis en large 120*80)
         for (int r = 0; r < sol.r80Long; r++) {
+            if (yCur + 120 > L) break;
             for (int c = 0; c < cap80Long && idx80 < pool80.size(); c++) {
                 Palette p = pool80.get(idx80++);
                 p.setPositionX(c * 80);
@@ -3442,7 +3446,145 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                 sortie.add(p);
             }
             yCur += 120;
+            yGauche = yCur;
+            yDroite = yCur;
         }
+        for (int r = 0; r < sol.r80Larg; r++) {
+            if (yCur + 80 > L) break;
+            for (int c = 0; c < cap80Larg && idx80 < pool80.size(); c++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(c * 120);
+                p.setPositionY(yCur);
+                p.setOrientation(1);
+                sortie.add(p);
+            }
+            yCur += 80;
+            yGauche = yCur;
+            yDroite = yCur;
+        }
+
+        // 4. Zone de transition P80 / Rolls
+        int yBaseTail = yCur;
+        int wP80 = 0;
+        if (sol.modeP80Tail == 1) {
+            wP80 = 80;
+            int yCol = yBaseTail;
+            for (int i = 0; i < sol.tail80Col0 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(0);
+                p.setPositionY(yCol);
+                p.setOrientation(0);
+                sortie.add(p);
+                yCol += 120;
+            }
+            yGauche = yCol;
+        } else if (sol.modeP80Tail == 2) {
+            wP80 = 160;
+            int yCol0 = yBaseTail;
+            for (int i = 0; i < sol.tail80Col0 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(0);
+                p.setPositionY(yCol0);
+                p.setOrientation(0);
+                sortie.add(p);
+                yCol0 += 120;
+            }
+            int yCol1 = yBaseTail;
+            for (int i = 0; i < sol.tail80Col1 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(80);
+                p.setPositionY(yCol1);
+                p.setOrientation(0);
+                sortie.add(p);
+                yCol1 += 120;
+            }
+            yGauche = Math.max(yCol0, yCol1);
+            yDroite = yCol1;
+        } else if (sol.modeP80Tail == 3) {
+            wP80 = 120;
+            int yCol = yBaseTail;
+            for (int i = 0; i < sol.tail80Col0 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(0);
+                p.setPositionY(yCol);
+                p.setOrientation(1);
+                sortie.add(p);
+                yCol += 80;
+            }
+            yGauche = yCol;
+        } else if (sol.modeP80Tail == 4) {
+            wP80 = 200;
+            int yCol0 = yBaseTail;
+            for (int i = 0; i < sol.tail80Col0 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(0);
+                p.setPositionY(yCol0);
+                p.setOrientation(1);
+                sortie.add(p);
+                yCol0 += 80;
+            }
+            int yCol1 = yBaseTail;
+            for (int i = 0; i < sol.tail80Col1 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(120);
+                p.setPositionY(yCol1);
+                p.setOrientation(0);
+                sortie.add(p);
+                yCol1 += 120;
+            }
+            yGauche = yCol0;
+            yDroite = yCol1;
+        }
+
+        // Rolls à droite des dernières P80
+        if (sol.rollsDroiteCount > 0 && wP80 > 0) {
+            int wDroite = W - wP80;
+            int capDr = (sol.rollsDroiteMode == 1) ? Math.max(1, wDroite / 57) : Math.max(1, wDroite / 135);
+            int wElem = (sol.rollsDroiteMode == 1) ? 57 : 135;
+            int dyElem = (sol.rollsDroiteMode == 1) ? 135 : 57;
+            int orientElem = (sol.rollsDroiteMode == 1) ? 0 : 1;
+
+            int yDr = yBaseTail;
+            int placed = 0;
+            while (placed < sol.rollsDroiteCount && idxRolls < poolRolls.size()) {
+                for (int c = 0; c < capDr && placed < sol.rollsDroiteCount && idxRolls < poolRolls.size(); c++) {
+                    Palette p = poolRolls.get(idxRolls++);
+                    p.setPositionX(wP80 + c * wElem);
+                    p.setPositionY(yDr);
+                    p.setOrientation(orientElem);
+                    sortie.add(p);
+                    placed++;
+                }
+                yDr += dyElem;
+            }
+            yDroite = yDr;
+        }
+
+        // Rolls sous les P80 de gauche (si présents)
+        if (sol.rollsSousP80Count > 0 && wP80 > 0) {
+            int capSous = (sol.rollsSousP80Mode == 1) ? Math.max(1, wP80 / 57) : Math.max(1, wP80 / 135);
+            int wElem = (sol.rollsSousP80Mode == 1) ? 57 : 135;
+            int dyElem = (sol.rollsSousP80Mode == 1) ? 135 : 57;
+            int orientElem = (sol.rollsSousP80Mode == 1) ? 0 : 1;
+
+            int ySous = yGauche;
+            int placed = 0;
+            while (placed < sol.rollsSousP80Count && idxRolls < poolRolls.size()) {
+                for (int c = 0; c < capSous && placed < sol.rollsSousP80Count && idxRolls < poolRolls.size(); c++) {
+                    Palette p = poolRolls.get(idxRolls++);
+                    p.setPositionX(c * wElem);
+                    p.setPositionY(ySous);
+                    p.setOrientation(orientElem);
+                    sortie.add(p);
+                    placed++;
+                }
+                ySous += dyElem;
+            }
+            yGauche = ySous;
+        }
+
+        // 5. Zone finale Rolls sur toute la largeur W (tout en bas)
+        yCur = Math.max(yGauche, yDroite);
 
         for (int r = 0; r < sol.rRollsLong; r++) {
             for (int c = 0; c < capRollsLong && idxRolls < poolRolls.size(); c++) {
@@ -3453,6 +3595,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                 sortie.add(p);
             }
             yCur += 135;
+            yGauche = yCur;
+            yDroite = yCur;
         }
 
         for (int r = 0; r < sol.rRollsLarg; r++) {
@@ -3464,92 +3608,101 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                 sortie.add(p);
             }
             yCur += 57;
+            yGauche = yCur;
+            yDroite = yCur;
         }
 
-        int K = (sol.colLargeur != null) ? sol.colLargeur.length : 0;
-        int yBaseCouloirs = yCur;
+        if (sol.remRollsFinalCount > 0 && idxRolls < poolRolls.size()) {
+            int capFin = (sol.remRollsFinalMode == 1) ? Math.max(1, capRollsLong) : Math.max(1, capRollsLarg);
+            int wElem = (sol.remRollsFinalMode == 1) ? 57 : 135;
+            int dyElem = (sol.remRollsFinalMode == 1) ? 135 : 57;
+            int orientElem = (sol.remRollsFinalMode == 1) ? 0 : 1;
 
-        for (int k = 0; k < K; k++) {
-            int xCol = sol.colXStart[k];
-            int largCol = sol.colLargeur[k];
-            int n100 = sol.col100Count[k];
-            int n100Rot = sol.col100RotCount[k];
-            int n100Norm = n100 - n100Rot;
-            int n80 = sol.col80Count[k];
-            int nRolls = sol.colRollsCount[k];
-
-            int dy100Norm = 100;
-            int dy100Rot = 120;
-            int dy80 = (largCol >= 120) ? 80 : 120;
-            int orient80 = (largCol >= 120) ? 1 : 0;
-
-            int yCol = yBaseCouloirs;
-
-            for (int i = 0; i < n100Norm && idx100 < pool100.size(); i++) {
-                Palette p = pool100.get(idx100++);
-                p.setPositionX(xCol);
-                p.setPositionY(yCol);
-                p.setOrientation(1);
-                sortie.add(p);
-                yCol += dy100Norm;
-            }
-            for (int i = 0; i < n100Rot && idx100 < pool100.size(); i++) {
-                Palette p = pool100.get(idx100++);
-                p.setPositionX(xCol);
-                p.setPositionY(yCol);
-                p.setOrientation(0);
-                sortie.add(p);
-                yCol += dy100Rot;
-            }
-            for (int i = 0; i < n80 && idx80 < pool80.size(); i++) {
-                Palette p = pool80.get(idx80++);
-                p.setPositionX(xCol);
-                p.setPositionY(yCol);
-                p.setOrientation(orient80);
-                sortie.add(p);
-                yCol += dy80;
-            }
-            if (nRolls > 0) {
-                if (largCol == 135) {
-                    for (int i = 0; i < nRolls && idxRolls < poolRolls.size(); i++) {
-                        Palette p = poolRolls.get(idxRolls++);
-                        p.setPositionX(xCol);
-                        p.setPositionY(yCol);
-                        p.setOrientation(1);
-                        sortie.add(p);
-                        yCol += 57;
-                    }
-                } else if (largCol == 120) {
-                    int i = 0;
-                    while (i < nRolls && idxRolls < poolRolls.size()) {
-                        Palette p1 = poolRolls.get(idxRolls++);
-                        p1.setPositionX(xCol);
-                        p1.setPositionY(yCol);
-                        p1.setOrientation(0);
-                        sortie.add(p1);
-                        i++;
-                        if (i < nRolls && idxRolls < poolRolls.size()) {
-                            Palette p2 = poolRolls.get(idxRolls++);
-                            p2.setPositionX(xCol + 57);
-                            p2.setPositionY(yCol);
-                            p2.setOrientation(0);
-                            sortie.add(p2);
-                            i++;
-                        }
-                        yCol += 135;
-                    }
-                } else {
-                    for (int i = 0; i < nRolls && idxRolls < poolRolls.size(); i++) {
-                        Palette p = poolRolls.get(idxRolls++);
-                        p.setPositionX(xCol);
-                        p.setPositionY(yCol);
-                        p.setOrientation(0);
-                        sortie.add(p);
-                        yCol += 135;
-                    }
+            int placed = 0;
+            while (placed < sol.remRollsFinalCount && idxRolls < poolRolls.size()) {
+                int nbInRow = 0;
+                for (int c = 0; c < capFin && placed < sol.remRollsFinalCount && idxRolls < poolRolls.size(); c++) {
+                    Palette p = poolRolls.get(idxRolls++);
+                    p.setPositionX(c * wElem);
+                    p.setPositionY(yCur);
+                    p.setOrientation(orientElem);
+                    sortie.add(p);
+                    placed++;
+                    nbInRow++;
+                }
+                yCur += dyElem;
+                yGauche = yCur;
+                if (nbInRow * wElem > W / 2) {
+                    yDroite = yCur;
                 }
             }
         }
+
+        // 6. Éléments à quai (débordement au-delà de L, dessinés tout en bas dans la zone rouge)
+        int yDebordement = Math.max(yCur, L);
+
+        while (idx100 < pool100.size()) {
+            int parRang = Math.max(1, cap100Larg > 0 ? cap100Larg : cap100Long);
+            int orient = (cap100Larg > 0) ? 1 : 0;
+            int wElem = (orient == 1) ? 120 : 100;
+            int dyElem = (orient == 1) ? 100 : 120;
+            int nbInRow = 0;
+            for (int c = 0; c < parRang && idx100 < pool100.size(); c++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(c * wElem);
+                p.setPositionY(yDebordement);
+                p.setOrientation(orient);
+                sortie.add(p);
+                nbInRow++;
+            }
+            yDebordement += dyElem;
+            yGauche = yDebordement;
+            if (nbInRow > 1) yDroite = yDebordement;
+        }
+
+        while (idx80 < pool80.size()) {
+            int Reste80 = pool80.size() - idx80;
+            boolean enLarge = (sol.r80Larg > 0 || Reste80 <= 2) && cap80Larg > 0 && Reste80 < cap80Long;
+            int parRang = enLarge ? Math.max(1, cap80Larg) : Math.max(1, cap80Long);
+            int orient = enLarge ? 1 : 0;
+            int wElem = enLarge ? 120 : 80;
+            int dyElem = enLarge ? 80 : 120;
+            int nbInRow = 0;
+            for (int c = 0; c < parRang && idx80 < pool80.size(); c++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(c * wElem);
+                p.setPositionY(yDebordement);
+                p.setOrientation(orient);
+                sortie.add(p);
+                nbInRow++;
+            }
+            yDebordement += dyElem;
+            yGauche = yDebordement;
+            if (nbInRow * wElem > W / 2) yDroite = yDebordement;
+        }
+
+        while (idxRolls < poolRolls.size()) {
+            boolean enLarge = autorisationForcerRotationRolls && capRollsLarg > 0;
+            int parRang = enLarge ? Math.max(1, capRollsLarg) : Math.max(1, capRollsLong);
+            int orient = enLarge ? 1 : 0;
+            int wElem = enLarge ? 135 : 57;
+            int dyElem = enLarge ? 57 : 135;
+            int nbInRow = 0;
+            for (int c = 0; c < parRang && idxRolls < poolRolls.size(); c++) {
+                Palette p = poolRolls.get(idxRolls++);
+                p.setPositionX(c * wElem);
+                p.setPositionY(yDebordement);
+                p.setOrientation(orient);
+                sortie.add(p);
+                nbInRow++;
+            }
+            yDebordement += dyElem;
+            yGauche = yDebordement;
+            if (nbInRow * wElem > W / 2) yDroite = yDebordement;
+        }
+
+        sol.rangA = yGauche;
+        sol.rangB = yDroite;
     }
 
     private void afficherResultatsCalculer4(
