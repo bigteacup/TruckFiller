@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -181,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -204,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -230,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -255,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -304,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -326,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -346,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -369,7 +369,7 @@ public class MainActivity extends AppCompatActivity {
                 if (oldMode) {
                     calculer();
                 } else {
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -404,7 +404,7 @@ public class MainActivity extends AppCompatActivity {
                     calculer();
                 } else {
                   //  creerRemorque(1320, 240, 300);
-                    calculer2();
+                    calculer3();
                 }
             }
         });
@@ -1328,6 +1328,934 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         }
 
         return t;
+    }
+
+    // =============================================================================================
+    // SOLUTION A : Algorithme complet par Profils (Tranches & Couloirs) + Optimisation Combinatoire
+    // Adapté dynamiquement à toutes les dimensions de remorque (largeur / longueur)
+    // =============================================================================================
+
+    private static class MotifTranche3 {
+        int nb100;
+        int nb80;
+        int deltaY;
+        int orient100;
+        int orient80;
+
+        MotifTranche3(int nb100, int nb80, int deltaY, int orient100, int orient80) {
+            this.nb100 = nb100;
+            this.nb80 = nb80;
+            this.deltaY = deltaY;
+            this.orient100 = orient100;
+            this.orient80 = orient80;
+        }
+    }
+
+    private static class ProfilCouloirs3 {
+        int c120;
+        int c100;
+        int c80;
+
+        ProfilCouloirs3(int c120, int c100, int c80) {
+            this.c120 = c120;
+            this.c100 = c100;
+            this.c80 = c80;
+        }
+
+        int totalCouloirs() {
+            return c120 + c100 + c80;
+        }
+    }
+
+    private static class EvalSolution3 {
+        int r100Long;
+        int r100Larg;
+        MotifTranche3 motifMixte;
+        int rMixte;
+        int r80Long;
+        ProfilCouloirs3 profilCouloirs;
+        int[] col100Count;
+        int[] col100RotCount;
+        int[] col80Count;
+        int[] colLargeur;
+        int[] colXStart;
+
+        int nbPalettesChargees = -1;
+        int surfaceChargee = -1;
+        int maxY = Integer.MAX_VALUE;
+        int ecartCouloirs = Integer.MAX_VALUE;
+        int nbRangsComplets = -1;
+        int rangA = 0;
+        int rangB = 0;
+
+        boolean estMeilleureQue(EvalSolution3 autre) {
+            if (autre == null || autre.nbPalettesChargees < 0) {
+                return true;
+            }
+            if (this.nbPalettesChargees != autre.nbPalettesChargees) {
+                return this.nbPalettesChargees > autre.nbPalettesChargees;
+            }
+            if (this.surfaceChargee != autre.surfaceChargee) {
+                return this.surfaceChargee > autre.surfaceChargee;
+            }
+            if (this.maxY != autre.maxY) {
+                return this.maxY < autre.maxY;
+            }
+            if (this.ecartCouloirs != autre.ecartCouloirs) {
+                return this.ecartCouloirs < autre.ecartCouloirs;
+            }
+            return this.nbRangsComplets > autre.nbRangsComplets;
+        }
+    }
+
+    private int lireEntierChamp(TextInputEditText champ, int valeurDefaut) {
+        if (champ == null || champ.getText() == null) {
+            return valeurDefaut;
+        }
+        try {
+            String texte = champ.getText().toString().trim();
+            if (texte.isEmpty()) {
+                return valeurDefaut;
+            }
+            return Math.max(0, Integer.parseInt(texte));
+        } catch (Exception e) {
+            return valeurDefaut;
+        }
+    }
+
+    private void calculer3() {
+        drawPosRemorque = findViewById(R.id.drawPosRemorque);
+        resultat = findViewById(R.id.resultat);
+
+        listeP80.clear();
+        listeP100.clear();
+
+        final int p80Total = lireEntierChamp(nombre80120, 0);
+        final int p100Total = lireEntierChamp(nombre100120, 0);
+        final int W = (remorque != null) ? Math.max(0, remorque.largeur) : 240;
+        final int L = (remorque != null) ? Math.max(0, remorque.longueur) : 1320;
+        final int yDepart = decalageBarresDeSeparation();
+
+        int casser80Force = 0;
+        if (autorisationForcerCasserUnRang80) {
+            casser80Force = lireEntierChamp(casser80120NombreTextInput, 0);
+        }
+        int rotation100Force = 0;
+        if (autorisationForcerRotation100) {
+            rotation100Force = lireEntierChamp(focerRotation100120NombreTextInput, 0);
+        }
+
+        for (int i = 0; i < p80Total; i++) {
+            Palette p = new Palette();
+            p.id = i + 1;
+            p.longueur = 120;
+            p.largeur = 80;
+            p.orientation = 0;
+            listeP80.add(p);
+        }
+        for (int i = 0; i < p100Total; i++) {
+            Palette p = new Palette();
+            p.id = i + 1;
+            p.longueur = 120;
+            p.largeur = 100;
+            p.orientation = 1;
+            listeP100.add(p);
+        }
+
+        ArrayList<Palette> listeDePalettesPosees = new ArrayList<>();
+
+        if ((p80Total == 0 && p100Total == 0) || W < 80 || L <= 0) {
+            int yCur = yDepart;
+            for (Palette p : listeP100) {
+                p.setPositionX(0);
+                p.setPositionY(yCur);
+                p.setOrientation(0);
+                listeDePalettesPosees.add(p);
+                yCur = p.getPositionYb();
+            }
+            for (Palette p : listeP80) {
+                p.setPositionX(0);
+                p.setPositionY(yCur);
+                p.setOrientation(0);
+                listeDePalettesPosees.add(p);
+                yCur = p.getPositionYb();
+            }
+            afficherResultatsCalculer3(listeDePalettesPosees, p80Total, p100Total, yDepart, yDepart, W, L);
+            return;
+        }
+
+        final int cap100Long = W / 100;
+        final int cap100Larg = W / 120;
+        final int cap80Long = W / 80;
+
+        ArrayList<MotifTranche3> motifsMixtes = new ArrayList<>();
+        motifsMixtes.add(new MotifTranche3(0, 0, 0, 0, 0));
+        for (int a = 1; a * 100 <= W; a++) {
+            int resteW = W - a * 100;
+            int b = resteW / 80;
+            if (b >= 1) {
+                motifsMixtes.add(new MotifTranche3(a, b, 120, 0, 0));
+            }
+        }
+
+        ArrayList<ProfilCouloirs3> profilsCouloirs = genererProfilsCouloirs3(W);
+
+        EvalSolution3 meilleure = null;
+
+        int maxR100Long = (cap100Long > 0) ? (p100Total / cap100Long) : 0;
+        for (int r100Long = 0; r100Long <= maxR100Long; r100Long++) {
+            int rem100ApresLong = p100Total - r100Long * cap100Long;
+            int maxR100Larg = (cap100Larg > 0) ? (rem100ApresLong / cap100Larg) : 0;
+
+            for (int r100Larg = 0; r100Larg <= maxR100Larg; r100Larg++) {
+                int rem100Apres100 = rem100ApresLong - r100Larg * cap100Larg;
+
+                for (MotifTranche3 motifMixte : motifsMixtes) {
+                    int maxRMixte = 0;
+                    if (motifMixte.nb100 > 0 && motifMixte.nb80 > 0) {
+                        maxRMixte = Math.min(rem100Apres100 / motifMixte.nb100, p80Total / motifMixte.nb80);
+                    }
+
+                    for (int rMixte = 0; rMixte <= maxRMixte; rMixte++) {
+                        int rem100ApresMixte = rem100Apres100 - rMixte * motifMixte.nb100;
+                        int rem80ApresMixte = p80Total - rMixte * motifMixte.nb80;
+
+                        int maxR80Possible = (cap80Long > 0) ? (rem80ApresMixte / cap80Long) : 0;
+                        int plafondR80 = maxR80Possible;
+                        if (autorisationForcerCasserUnRang80 && casser80Force > 0) {
+                            plafondR80 = Math.max(0, maxR80Possible - Math.min(casser80Force, maxR80Possible));
+                        }
+                        if (autorisationRangBatard80 && plafondR80 > 0 && cap100Larg >= 2) {
+                            plafondR80 = Math.max(0, plafondR80 - 1);
+                        }
+
+                        int debutR80 = 0;
+                        if (autorisationForcerCasserUnRang80 && casser80Force > 0) {
+                            debutR80 = plafondR80;
+                        }
+
+                        for (int r80Long = debutR80; r80Long <= plafondR80; r80Long++) {
+                            int rem100 = rem100ApresMixte;
+                            int rem80 = rem80ApresMixte - r80Long * cap80Long;
+
+                            int yApresTranches = yDepart
+                                    + r100Long * 120
+                                    + r100Larg * 100
+                                    + rMixte * motifMixte.deltaY
+                                    + r80Long * 120;
+
+                            int nbRangsComplets = r100Long + r100Larg + rMixte + r80Long;
+                            int palettesChargeesTranches = compterPalettesChargeesTranches3(
+                                    yDepart, r100Long, cap100Long, r100Larg, cap100Larg,
+                                    rMixte, motifMixte, r80Long, cap80Long, L
+                            );
+                            int surfaceChargeeTranches = compterSurfaceChargeeTranches3(
+                                    yDepart, r100Long, cap100Long, r100Larg, cap100Larg,
+                                    rMixte, motifMixte, r80Long, cap80Long, L
+                            );
+
+                            if (rem100 == 0 && rem80 == 0) {
+                                EvalSolution3 cand = new EvalSolution3();
+                                cand.r100Long = r100Long;
+                                cand.r100Larg = r100Larg;
+                                cand.motifMixte = motifMixte;
+                                cand.rMixte = rMixte;
+                                cand.r80Long = r80Long;
+                                cand.profilCouloirs = new ProfilCouloirs3(0, 0, 0);
+                                cand.col100Count = new int[0];
+                                cand.col100RotCount = new int[0];
+                                cand.col80Count = new int[0];
+                                cand.colLargeur = new int[0];
+                                cand.colXStart = new int[0];
+                                cand.nbPalettesChargees = palettesChargeesTranches;
+                                cand.surfaceChargee = surfaceChargeeTranches;
+                                cand.maxY = yApresTranches;
+                                cand.ecartCouloirs = 0;
+                                cand.nbRangsComplets = nbRangsComplets;
+                                cand.rangA = yApresTranches;
+                                cand.rangB = yApresTranches;
+
+                                if (cand.estMeilleureQue(meilleure)) {
+                                    meilleure = cand;
+                                }
+                                continue;
+                            }
+
+                            for (ProfilCouloirs3 profil : profilsCouloirs) {
+                                EvalSolution3 cand = evaluerReliquatDansProfil3(
+                                        profil, rem100, rem80, rotation100Force,
+                                        yApresTranches, W, L,
+                                        r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                                        palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets
+                                );
+                                if (cand != null && cand.estMeilleureQue(meilleure)) {
+                                    meilleure = cand;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (meilleure != null) {
+            construirePalettesPosees3(
+                    meilleure, listeP100, listeP80, listeDePalettesPosees,
+                    yDepart, W, L, cap100Long, cap100Larg, cap80Long
+            );
+            afficherResultatsCalculer3(
+                    listeDePalettesPosees, p80Total, p100Total,
+                    meilleure.rangA, meilleure.rangB, W, L
+            );
+        } else {
+            afficherResultatsCalculer3(listeDePalettesPosees, p80Total, p100Total, yDepart, yDepart, W, L);
+        }
+    }
+
+    private ArrayList<ProfilCouloirs3> genererProfilsCouloirs3(int W) {
+        ArrayList<ProfilCouloirs3> liste = new ArrayList<>();
+        for (int c120 = W / 120; c120 >= 0; c120--) {
+            int r1 = W - c120 * 120;
+            for (int c100 = r1 / 100; c100 >= 0; c100--) {
+                int r2 = r1 - c100 * 100;
+                int c80 = r2 / 80;
+                if (c120 + c100 + c80 > 0) {
+                    liste.add(new ProfilCouloirs3(c120, c100, c80));
+                }
+                if (c80 > 0 && (c120 + c100) > 0) {
+                    liste.add(new ProfilCouloirs3(c120, c100, 0));
+                }
+            }
+        }
+        return liste;
+    }
+
+    private int compterPalettesChargeesTranches3(
+            int yDepart, int r100Long, int cap100Long, int r100Larg, int cap100Larg,
+            int rMixte, MotifTranche3 motifMixte, int r80Long, int cap80Long, int L
+    ) {
+        int y = yDepart;
+        int total = 0;
+        for (int i = 0; i < r100Long; i++) {
+            y += 120;
+            if (y <= L) total += cap100Long;
+        }
+        for (int i = 0; i < r100Larg; i++) {
+            y += 100;
+            if (y <= L) total += cap100Larg;
+        }
+        for (int i = 0; i < rMixte; i++) {
+            y += motifMixte.deltaY;
+            if (y <= L) total += (motifMixte.nb100 + motifMixte.nb80);
+        }
+        for (int i = 0; i < r80Long; i++) {
+            y += 120;
+            if (y <= L) total += cap80Long;
+        }
+        return total;
+    }
+
+    private int compterSurfaceChargeeTranches3(
+            int yDepart, int r100Long, int cap100Long, int r100Larg, int cap100Larg,
+            int rMixte, MotifTranche3 motifMixte, int r80Long, int cap80Long, int L
+    ) {
+        int y = yDepart;
+        int surface = 0;
+        for (int i = 0; i < r100Long; i++) {
+            y += 120;
+            if (y <= L) surface += cap100Long * (100 * 120);
+        }
+        for (int i = 0; i < r100Larg; i++) {
+            y += 100;
+            if (y <= L) surface += cap100Larg * (100 * 120);
+        }
+        for (int i = 0; i < rMixte; i++) {
+            y += motifMixte.deltaY;
+            if (y <= L) surface += motifMixte.nb100 * (100 * 120) + motifMixte.nb80 * (80 * 120);
+        }
+        for (int i = 0; i < r80Long; i++) {
+            y += 120;
+            if (y <= L) surface += cap80Long * (80 * 120);
+        }
+        return surface;
+    }
+
+    private EvalSolution3 evaluerReliquatDansProfil3(
+            ProfilCouloirs3 profil, int rem100, int rem80, int rotation100Force,
+            int yBase, int W, int L,
+            int r100Long, int r100Larg, MotifTranche3 motifMixte, int rMixte, int r80Long,
+            int palettesChargeesTranches, int surfaceChargeeTranches, int nbRangsComplets
+    ) {
+        int c120 = profil.c120;
+        int c100 = profil.c100;
+        int c80 = profil.c80;
+        int K = c120 + c100 + c80;
+        if (K <= 0) {
+            return null;
+        }
+        if (rem100 > 0 && c120 == 0 && c100 == 0 && W >= 100) {
+            return null;
+        }
+
+        EvalSolution3 meilleureLocale = null;
+
+        int minU100 = (c120 == 0) ? rem100 : 0;
+        int maxU100 = (c100 > 0 || (c120 == 0 && W < 100)) ? rem100 : 0;
+
+        for (int u100 = minU100; u100 <= maxU100; u100++) {
+            int m100 = rem100 - u100;
+
+            int maxU80 = (c100 > 0) ? rem80 : 0;
+            for (int u80 = 0; u80 <= maxU80; u80++) {
+                int reste80Apres100 = rem80 - u80;
+
+                int minV80 = (c120 == 0) ? reste80Apres100 : 0;
+                int maxV80 = (c80 > 0) ? reste80Apres100 : 0;
+                if (minV80 > maxV80) {
+                    continue;
+                }
+
+                for (int v80 = minV80; v80 <= maxV80; v80++) {
+                    int m80 = reste80Apres100 - v80;
+                    if (c120 == 0 && (m100 > 0 || m80 > 0)) {
+                        continue;
+                    }
+
+                    EvalSolution3 cand = repartirDansCouloirs120(
+                            profil, m100, m80, u100, u80, v80, rotation100Force,
+                            yBase, W, L,
+                            r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                            palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets
+                    );
+                    if (cand != null && cand.estMeilleureQue(meilleureLocale)) {
+                        meilleureLocale = cand;
+                    }
+                }
+            }
+        }
+        return meilleureLocale;
+    }
+
+    private EvalSolution3 repartirDansCouloirs120(
+            final ProfilCouloirs3 profil,
+            int m100, int m80, final int u100, final int u80, final int v80,
+            final int rotation100Force,
+            final int yBase, final int W, final int L,
+            final int r100Long, final int r100Larg, final MotifTranche3 motifMixte, final int rMixte, final int r80Long,
+            final int palettesChargeesTranches, final int surfaceChargeeTranches, final int nbRangsComplets
+    ) {
+        final int c120 = profil.c120;
+        final int c100 = profil.c100;
+        final int c80 = profil.c80;
+        final int K = c120 + c100 + c80;
+
+        final int[] temp100 = new int[K];
+        final int[] temp80 = new int[K];
+
+        if (c100 > 0) {
+            int totalC100 = u100 + u80;
+            int base = totalC100 / c100;
+            int reste = totalC100 % c100;
+            int rest100 = u100;
+            int rest80 = u80;
+            for (int i = 0; i < c100; i++) {
+                int quota = base + (i < reste ? 1 : 0);
+                int prend100 = Math.min(rest100, quota);
+                int prend80 = Math.min(rest80, quota - prend100);
+                temp100[c120 + i] = prend100;
+                temp80[c120 + i] = prend80;
+                rest100 -= prend100;
+                rest80 -= prend80;
+            }
+        } else if (u100 > 0 && c80 > 0 && W < 100) {
+            temp100[0] = u100;
+        }
+
+        if (c80 > 0) {
+            int base = v80 / c80;
+            int reste = v80 % c80;
+            for (int i = 0; i < c80; i++) {
+                temp80[c120 + c100 + i] += base + (i < reste ? 1 : 0);
+            }
+        }
+
+        final EvalSolution3[] bestRef = new EvalSolution3[1];
+
+        if (c120 == 0) {
+            evaluerConfigurationCouloirsComplete(
+                    profil, temp100, temp80, rotation100Force,
+                    yBase, W, L,
+                    r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                    palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                    bestRef
+            );
+            return bestRef[0];
+        }
+
+        if (c120 == 1) {
+            temp100[0] = m100;
+            temp80[0] = m80;
+            evaluerConfigurationCouloirsComplete(
+                    profil, temp100, temp80, rotation100Force,
+                    yBase, W, L,
+                    r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                    palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                    bestRef
+            );
+            return bestRef[0];
+        }
+
+        if (c120 == 2) {
+            for (int a100 = 0; a100 <= m100; a100++) {
+                temp100[0] = a100;
+                temp100[1] = m100 - a100;
+                for (int a80 = 0; a80 <= m80; a80++) {
+                    temp80[0] = a80;
+                    temp80[1] = m80 - a80;
+                    evaluerConfigurationCouloirsComplete(
+                            profil, temp100, temp80, rotation100Force,
+                            yBase, W, L,
+                            r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                            palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                            bestRef
+                    );
+                }
+            }
+            return bestRef[0];
+        }
+
+        repartirC120Recursif(
+                0, c120, m100, m80, temp100, temp80,
+                profil, rotation100Force, yBase, W, L,
+                r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                bestRef
+        );
+        return bestRef[0];
+    }
+
+    private void repartirC120Recursif(
+            int idx, int c120, int rest100, int rest80,
+            int[] temp100, int[] temp80,
+            ProfilCouloirs3 profil, int rotation100Force, int yBase, int W, int L,
+            int r100Long, int r100Larg, MotifTranche3 motifMixte, int rMixte, int r80Long,
+            int palettesChargeesTranches, int surfaceChargeeTranches, int nbRangsComplets,
+            EvalSolution3[] bestRef
+    ) {
+        int colsRestantes = c120 - idx;
+        if (colsRestantes == 1) {
+            temp100[idx] = rest100;
+            temp80[idx] = rest80;
+            evaluerConfigurationCouloirsComplete(
+                    profil, temp100, temp80, rotation100Force,
+                    yBase, W, L,
+                    r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                    palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                    bestRef
+            );
+            return;
+        }
+
+        int moy100 = rest100 / colsRestantes;
+        int min100 = Math.max(0, moy100 - 2);
+        int max100 = Math.min(rest100, moy100 + 2);
+
+        int moy80 = rest80 / colsRestantes;
+        int min80 = Math.max(0, moy80 - 3);
+        int max80 = Math.min(rest80, moy80 + 3);
+
+        for (int p100 = min100; p100 <= max100; p100++) {
+            temp100[idx] = p100;
+            for (int p80 = min80; p80 <= max80; p80++) {
+                temp80[idx] = p80;
+                repartirC120Recursif(
+                        idx + 1, c120, rest100 - p100, rest80 - p80,
+                        temp100, temp80,
+                        profil, rotation100Force, yBase, W, L,
+                        r100Long, r100Larg, motifMixte, rMixte, r80Long,
+                        palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                        bestRef
+                );
+            }
+        }
+    }
+
+    private void evaluerConfigurationCouloirsComplete(
+            ProfilCouloirs3 profil, int[] temp100, int[] temp80, int rotation100Force,
+            int yBase, int W, int L,
+            int r100Long, int r100Larg, MotifTranche3 motifMixte, int rMixte, int r80Long,
+            int palettesChargeesTranches, int surfaceChargeeTranches, int nbRangsComplets,
+            EvalSolution3[] bestRef
+    ) {
+        int c120 = profil.c120;
+        int c100 = profil.c100;
+        int c80 = profil.c80;
+        int K = c120 + c100 + c80;
+
+        int nbChargees = palettesChargeesTranches;
+        int surfaceChargee = surfaceChargeeTranches;
+        int maxY = yBase;
+        int minY = Integer.MAX_VALUE;
+
+        int[] rot100ParCol = new int[K];
+        int rotRestant = Math.max(0, rotation100Force);
+
+        int[] yFinCol = new int[K];
+
+        for (int k = 0; k < K; k++) {
+            int largCol = (k < c120) ? 120 : ((k < c120 + c100) ? 100 : 80);
+            int n100 = temp100[k];
+            int n80 = temp80[k];
+
+            int n100Rot = 0;
+            if (largCol == 120 && rotRestant > 0 && n100 > 0) {
+                n100Rot = Math.min(n100, rotRestant);
+                rotRestant -= n100Rot;
+            } else if (largCol < 120) {
+                n100Rot = n100;
+            }
+            rot100ParCol[k] = n100Rot;
+            int n100Norm = n100 - n100Rot;
+
+            int dy100Norm = 100;
+            int dy100Rot = 120;
+            int dy80 = (largCol == 120) ? 80 : 120;
+
+            int hCol = n100Norm * dy100Norm + n100Rot * dy100Rot + n80 * dy80;
+            int yFin = yBase + hCol;
+            yFinCol[k] = yFin;
+
+            if (yFin > maxY) {
+                maxY = yFin;
+            }
+            if (yFin < minY) {
+                minY = yFin;
+            }
+
+            int dispoY = Math.max(0, L - yBase);
+            if (hCol <= dispoY) {
+                if (largCol >= 100) {
+                    nbChargees += (n100 + n80);
+                    surfaceChargee += n100 * (100 * 120) + n80 * (80 * 120);
+                } else {
+                    nbChargees += n80;
+                    surfaceChargee += n80 * (80 * 120);
+                }
+            } else if (dispoY > 0) {
+                int bestInColCount = 0;
+                int bestInColSurf = 0;
+                int maxI100Norm = (largCol >= 100) ? n100Norm : 0;
+                int maxI100Rot = (largCol >= 100) ? n100Rot : 0;
+
+                for (int iNorm = 0; iNorm <= maxI100Norm; iNorm++) {
+                    int y1 = iNorm * dy100Norm;
+                    if (y1 > dispoY) break;
+                    for (int iRot = 0; iRot <= maxI100Rot; iRot++) {
+                        int y2 = y1 + iRot * dy100Rot;
+                        if (y2 > dispoY) break;
+                        int i80 = Math.min(n80, (dispoY - y2) / dy80);
+                        int count = iNorm + iRot + i80;
+                        int surf = (iNorm + iRot) * (100 * 120) + i80 * (80 * 120);
+                        if (count > bestInColCount || (count == bestInColCount && surf > bestInColSurf)) {
+                            bestInColCount = count;
+                            bestInColSurf = surf;
+                        }
+                    }
+                }
+                nbChargees += bestInColCount;
+                surfaceChargee += bestInColSurf;
+            }
+        }
+
+        if (minY == Integer.MAX_VALUE) {
+            minY = yBase;
+        }
+        int ecart = maxY - minY;
+
+        int rangA = yFinCol[0];
+        int rangB = (K >= 2) ? yFinCol[1] : yBase;
+        if (K > 2) {
+            rangA = yBase;
+            rangB = yBase;
+            for (int k = 0; k < K; k++) {
+                if (k < (K + 1) / 2) {
+                    rangA = Math.max(rangA, yFinCol[k]);
+                } else {
+                    rangB = Math.max(rangB, yFinCol[k]);
+                }
+            }
+        }
+
+        EvalSolution3 cand = new EvalSolution3();
+        cand.nbPalettesChargees = nbChargees;
+        cand.surfaceChargee = surfaceChargee;
+        cand.maxY = maxY;
+        cand.ecartCouloirs = ecart;
+        cand.nbRangsComplets = nbRangsComplets;
+        cand.rangA = rangA;
+        cand.rangB = rangB;
+
+        if (cand.estMeilleureQue(bestRef[0])) {
+            cand.r100Long = r100Long;
+            cand.r100Larg = r100Larg;
+            cand.motifMixte = motifMixte;
+            cand.rMixte = rMixte;
+            cand.r80Long = r80Long;
+            cand.profilCouloirs = profil;
+            cand.col100Count = new int[K];
+            cand.col100RotCount = new int[K];
+            cand.col80Count = new int[K];
+            cand.colLargeur = new int[K];
+            cand.colXStart = new int[K];
+
+            int xCur = 0;
+            for (int k = 0; k < K; k++) {
+                int largCol = (k < c120) ? 120 : ((k < c120 + c100) ? 100 : 80);
+                cand.col100Count[k] = temp100[k];
+                cand.col100RotCount[k] = rot100ParCol[k];
+                cand.col80Count[k] = temp80[k];
+                cand.colLargeur[k] = largCol;
+                cand.colXStart[k] = xCur;
+                xCur += largCol;
+            }
+            bestRef[0] = cand;
+        }
+    }
+
+    private void construirePalettesPosees3(
+            EvalSolution3 sol,
+            ArrayList<Palette> pool100,
+            ArrayList<Palette> pool80,
+            ArrayList<Palette> sortie,
+            int yDepart, int W, int L,
+            int cap100Long, int cap100Larg, int cap80Long
+    ) {
+        int idx100 = 0;
+        int idx80 = 0;
+        int yCur = yDepart;
+
+        for (int r = 0; r < sol.r100Long; r++) {
+            for (int c = 0; c < cap100Long && idx100 < pool100.size(); c++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(c * 100);
+                p.setPositionY(yCur);
+                p.setOrientation(0);
+                sortie.add(p);
+            }
+            yCur += 120;
+        }
+
+        for (int r = 0; r < sol.r100Larg; r++) {
+            for (int c = 0; c < cap100Larg && idx100 < pool100.size(); c++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(c * 120);
+                p.setPositionY(yCur);
+                p.setOrientation(1);
+                sortie.add(p);
+            }
+            yCur += 100;
+        }
+
+        if (sol.motifMixte != null && sol.rMixte > 0) {
+            for (int r = 0; r < sol.rMixte; r++) {
+                int xCur = 0;
+                for (int c = 0; c < sol.motifMixte.nb100 && idx100 < pool100.size(); c++) {
+                    Palette p = pool100.get(idx100++);
+                    p.setPositionX(xCur);
+                    p.setPositionY(yCur);
+                    p.setOrientation(0);
+                    sortie.add(p);
+                    xCur += 100;
+                }
+                for (int c = 0; c < sol.motifMixte.nb80 && idx80 < pool80.size(); c++) {
+                    Palette p = pool80.get(idx80++);
+                    p.setPositionX(xCur);
+                    p.setPositionY(yCur);
+                    p.setOrientation(0);
+                    sortie.add(p);
+                    xCur += 80;
+                }
+                yCur += sol.motifMixte.deltaY;
+            }
+        }
+
+        for (int r = 0; r < sol.r80Long; r++) {
+            for (int c = 0; c < cap80Long && idx80 < pool80.size(); c++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(c * 80);
+                p.setPositionY(yCur);
+                p.setOrientation(0);
+                sortie.add(p);
+            }
+            yCur += 120;
+        }
+
+        int K = (sol.colLargeur != null) ? sol.colLargeur.length : 0;
+        int yBaseCouloirs = yCur;
+
+        for (int k = 0; k < K; k++) {
+            int xCol = sol.colXStart[k];
+            int largCol = sol.colLargeur[k];
+            int n100 = sol.col100Count[k];
+            int n100Rot = sol.col100RotCount[k];
+            int n100Norm = n100 - n100Rot;
+            int n80 = sol.col80Count[k];
+
+            int dy100Norm = 100;
+            int dy100Rot = 120;
+            int dy80 = (largCol == 120) ? 80 : 120;
+            int orient80 = (largCol == 120) ? 1 : 0;
+
+            int hCol = n100Norm * dy100Norm + n100Rot * dy100Rot + n80 * dy80;
+            int dispoY = Math.max(0, L - yBaseCouloirs);
+
+            int inNorm = n100Norm;
+            int inRot = n100Rot;
+            int in80 = n80;
+
+            if (hCol > dispoY && dispoY > 0) {
+                int bestCount = -1;
+                int bestSurf = -1;
+                int maxINorm = (largCol >= 100) ? n100Norm : 0;
+                int maxIRot = (largCol >= 100) ? n100Rot : 0;
+
+                for (int iN = 0; iN <= maxINorm; iN++) {
+                    int y1 = iN * dy100Norm;
+                    if (y1 > dispoY) break;
+                    for (int iR = 0; iR <= maxIRot; iR++) {
+                        int y2 = y1 + iR * dy100Rot;
+                        if (y2 > dispoY) break;
+                        int i8 = Math.min(n80, (dispoY - y2) / dy80);
+                        int count = iN + iR + i8;
+                        int surf = (iN + iR) * (100 * 120) + i8 * (80 * 120);
+                        if (count > bestCount || (count == bestCount && surf > bestSurf)) {
+                            bestCount = count;
+                            bestSurf = surf;
+                            inNorm = iN;
+                            inRot = iR;
+                            in80 = i8;
+                        }
+                    }
+                }
+            }
+
+            int outNorm = n100Norm - inNorm;
+            int outRot = n100Rot - inRot;
+            int out80 = n80 - in80;
+
+            int yCol = yBaseCouloirs;
+
+            for (int i = 0; i < inNorm && idx100 < pool100.size(); i++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(xCol);
+                p.setPositionY(yCol);
+                p.setOrientation(1);
+                sortie.add(p);
+                yCol += dy100Norm;
+            }
+            for (int i = 0; i < inRot && idx100 < pool100.size(); i++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(xCol);
+                p.setPositionY(yCol);
+                p.setOrientation(0);
+                sortie.add(p);
+                yCol += dy100Rot;
+            }
+            for (int i = 0; i < in80 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(xCol);
+                p.setPositionY(yCol);
+                p.setOrientation(orient80);
+                sortie.add(p);
+                yCol += dy80;
+            }
+
+            for (int i = 0; i < outNorm && idx100 < pool100.size(); i++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(xCol);
+                p.setPositionY(yCol);
+                p.setOrientation(1);
+                sortie.add(p);
+                yCol += dy100Norm;
+            }
+            for (int i = 0; i < outRot && idx100 < pool100.size(); i++) {
+                Palette p = pool100.get(idx100++);
+                p.setPositionX(xCol);
+                p.setPositionY(yCol);
+                p.setOrientation(0);
+                sortie.add(p);
+                yCol += dy100Rot;
+            }
+            for (int i = 0; i < out80 && idx80 < pool80.size(); i++) {
+                Palette p = pool80.get(idx80++);
+                p.setPositionX(xCol);
+                p.setPositionY(yCol);
+                p.setOrientation(orient80);
+                sortie.add(p);
+                yCol += dy80;
+            }
+        }
+    }
+
+    private void afficherResultatsCalculer3(
+            ArrayList<Palette> listeDePalettesPosees,
+            int p80Total, int p100Total,
+            int rangA, int rangB, int W, int L
+    ) {
+        int p80EnRemorque = 0;
+        int p100EnRemorque = 0;
+        int maxYbGlobal = L;
+
+        for (Palette p : listeDePalettesPosees) {
+            if (p.getPositionYb() > maxYbGlobal) {
+                maxYbGlobal = p.getPositionYb();
+            }
+            if (p.getPositionX() >= 0 && p.getPositionXb() <= W && p.getPositionY() >= 0 && p.getPositionYb() <= L) {
+                if (p.getLargeur() == 80) {
+                    p80EnRemorque++;
+                } else if (p.getLargeur() == 100) {
+                    p100EnRemorque++;
+                }
+            }
+        }
+
+        int p80AQuai = Math.max(0, p80Total - p80EnRemorque);
+        int p100AQuai = Math.max(0, p100Total - p100EnRemorque);
+
+        double a = rangA;
+        double b = rangB;
+        double resteA = L - a;
+        double resteB = L - b;
+
+        double surfaceRemorqueM2 = (L * (double) W) / 10000.0;
+        double surfaceUtiliseeM2 = (p80EnRemorque * (80.0 * 120.0) + p100EnRemorque * (100.0 * 120.0)) / 10000.0;
+        double surfaceInutiliseeM2 = Math.max(0.0, Math.round((surfaceRemorqueM2 - surfaceUtiliseeM2) * 100.0) / 100.0);
+        surfaceRemorqueM2 = Math.round(surfaceRemorqueM2 * 100.0) / 100.0;
+
+        if (resultat != null) {
+            resultat.setText(
+                    "Rang A : " + (a / 100.0) + "    Reste : " + (resteA / 100.0) + "\n" +
+                    "Rang B : " + (b / 100.0) + "    Reste : " + (resteB / 100.0) + "\n" +
+                    "Surface inutilisée : " + surfaceInutiliseeM2 + "/" + surfaceRemorqueM2 + "\n" +
+                    p80AQuai + " P80 à quai" + "\n" +
+                    p100AQuai + " P100 à quai"
+            );
+        }
+
+        drawView.oldMode = false;
+        drawView.listeDePalettesPosees = listeDePalettesPosees;
+        drawView.listeP80 = listeP80;
+        drawView.listeP100 = listeP100;
+
+        int sizeX = (int) (W / agrandissement) + 20;
+        int sizeY = Math.max((int) (L / agrandissement) + 145, (int) (maxYbGlobal / agrandissement) + 30);
+        drawView.setLayoutParams(new LinearLayout.LayoutParams(sizeX, sizeY));
+
+        if (drawPosRemorque != null) {
+            drawPosRemorque.removeView(drawView);
+            drawPosRemorque.addView(drawView);
+        }
+        drawView.invalidate();
     }
 
 
