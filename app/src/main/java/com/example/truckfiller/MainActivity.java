@@ -1382,7 +1382,10 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
         int nbPalettesChargees = -1;
         int surfaceChargee = -1;
+        int surfacePerdueFond = Integer.MAX_VALUE;
         int maxY = Integer.MAX_VALUE;
+        int perteModuloCouloirs = Integer.MAX_VALUE;
+        int capaciteFuture100 = 0;
         int ecartCouloirs = Integer.MAX_VALUE;
         int nbRangsComplets = -1;
         int rangA = 0;
@@ -1398,8 +1401,17 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             if (this.surfaceChargee != autre.surfaceChargee) {
                 return this.surfaceChargee > autre.surfaceChargee;
             }
+            if (this.surfacePerdueFond != autre.surfacePerdueFond) {
+                return this.surfacePerdueFond < autre.surfacePerdueFond;
+            }
             if (this.maxY != autre.maxY) {
                 return this.maxY < autre.maxY;
+            }
+            if (this.perteModuloCouloirs != autre.perteModuloCouloirs) {
+                return this.perteModuloCouloirs < autre.perteModuloCouloirs;
+            }
+            if (this.capaciteFuture100 != autre.capaciteFuture100) {
+                return this.capaciteFuture100 > autre.capaciteFuture100;
             }
             if (this.ecartCouloirs != autre.ecartCouloirs) {
                 return this.ecartCouloirs < autre.ecartCouloirs;
@@ -1545,6 +1557,11 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                                     + r80Long * 120;
 
                             int nbRangsComplets = r100Long + r100Larg + rMixte + r80Long;
+                            int surfacePerdueTranches = r100Long * (W - cap100Long * 100) * 120
+                                    + r100Larg * (W - cap100Larg * 120) * 100
+                                    + rMixte * (W - (motifMixte.nb100 * 100 + motifMixte.nb80 * 80)) * motifMixte.deltaY
+                                    + r80Long * (W - cap80Long * 80) * 120;
+
                             int palettesChargeesTranches = compterPalettesChargeesTranches3(
                                     yDepart, r100Long, cap100Long, r100Larg, cap100Larg,
                                     rMixte, motifMixte, r80Long, cap80Long, L
@@ -1569,7 +1586,9 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                                 cand.colXStart = new int[0];
                                 cand.nbPalettesChargees = palettesChargeesTranches;
                                 cand.surfaceChargee = surfaceChargeeTranches;
+                                cand.surfacePerdueFond = surfacePerdueTranches;
                                 cand.maxY = yApresTranches;
+                                cand.perteModuloCouloirs = 0;
                                 cand.ecartCouloirs = 0;
                                 cand.nbRangsComplets = nbRangsComplets;
                                 cand.rangA = yApresTranches;
@@ -1586,7 +1605,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                                         profil, rem100, rem80, rotation100Force,
                                         yApresTranches, W, L,
                                         r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                                        palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets
+                                        palettesChargeesTranches, surfaceChargeeTranches,
+                                        surfacePerdueTranches, nbRangsComplets
                                 );
                                 if (cand != null && cand.estMeilleureQue(meilleure)) {
                                     meilleure = cand;
@@ -1684,7 +1704,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             ProfilCouloirs3 profil, int rem100, int rem80, int rotation100Force,
             int yBase, int W, int L,
             int r100Long, int r100Larg, MotifTranche3 motifMixte, int rMixte, int r80Long,
-            int palettesChargeesTranches, int surfaceChargeeTranches, int nbRangsComplets
+            int palettesChargeesTranches, int surfaceChargeeTranches,
+            int surfacePerdueTranches, int nbRangsComplets
     ) {
         int c120 = profil.c120;
         int c100 = profil.c100;
@@ -1705,7 +1726,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         for (int u100 = minU100; u100 <= maxU100; u100++) {
             int m100 = rem100 - u100;
 
-            int maxU80 = (c100 > 0) ? rem80 : 0;
+            // On n'envoie des P80 dans un couloir de 100cm (ce qui perd 20cm de large) que s'il n'y a ni couloir 120 ni couloir 80
+            int maxU80 = (c100 > 0 && c120 == 0 && c80 == 0) ? rem80 : 0;
             for (int u80 = 0; u80 <= maxU80; u80++) {
                 int reste80Apres100 = rem80 - u80;
 
@@ -1725,7 +1747,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                             profil, m100, m80, u100, u80, v80, rotation100Force,
                             yBase, W, L,
                             r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                            palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets
+                            palettesChargeesTranches, surfaceChargeeTranches,
+                            surfacePerdueTranches, nbRangsComplets
                     );
                     if (cand != null && cand.estMeilleureQue(meilleureLocale)) {
                         meilleureLocale = cand;
@@ -1742,7 +1765,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             final int rotation100Force,
             final int yBase, final int W, final int L,
             final int r100Long, final int r100Larg, final MotifTranche3 motifMixte, final int rMixte, final int r80Long,
-            final int palettesChargeesTranches, final int surfaceChargeeTranches, final int nbRangsComplets
+            final int palettesChargeesTranches, final int surfaceChargeeTranches,
+            final int surfacePerdueTranches, final int nbRangsComplets
     ) {
         final int c120 = profil.c120;
         final int c100 = profil.c100;
@@ -1786,7 +1810,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                     profil, temp100, temp80, rotation100Force,
                     yBase, W, L,
                     r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                    palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                    palettesChargeesTranches, surfaceChargeeTranches,
+                    surfacePerdueTranches, nbRangsComplets,
                     bestRef
             );
             return bestRef[0];
@@ -1799,7 +1824,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                     profil, temp100, temp80, rotation100Force,
                     yBase, W, L,
                     r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                    palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                    palettesChargeesTranches, surfaceChargeeTranches,
+                    surfacePerdueTranches, nbRangsComplets,
                     bestRef
             );
             return bestRef[0];
@@ -1816,7 +1842,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                             profil, temp100, temp80, rotation100Force,
                             yBase, W, L,
                             r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                            palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                            palettesChargeesTranches, surfaceChargeeTranches,
+                            surfacePerdueTranches, nbRangsComplets,
                             bestRef
                     );
                 }
@@ -1828,7 +1855,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                 0, c120, m100, m80, temp100, temp80,
                 profil, rotation100Force, yBase, W, L,
                 r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                palettesChargeesTranches, surfaceChargeeTranches,
+                surfacePerdueTranches, nbRangsComplets,
                 bestRef
         );
         return bestRef[0];
@@ -1839,7 +1867,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             int[] temp100, int[] temp80,
             ProfilCouloirs3 profil, int rotation100Force, int yBase, int W, int L,
             int r100Long, int r100Larg, MotifTranche3 motifMixte, int rMixte, int r80Long,
-            int palettesChargeesTranches, int surfaceChargeeTranches, int nbRangsComplets,
+            int palettesChargeesTranches, int surfaceChargeeTranches,
+            int surfacePerdueTranches, int nbRangsComplets,
             EvalSolution3[] bestRef
     ) {
         int colsRestantes = c120 - idx;
@@ -1850,7 +1879,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                     profil, temp100, temp80, rotation100Force,
                     yBase, W, L,
                     r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                    palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                    palettesChargeesTranches, surfaceChargeeTranches,
+                    surfacePerdueTranches, nbRangsComplets,
                     bestRef
             );
             return;
@@ -1873,7 +1903,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
                         temp100, temp80,
                         profil, rotation100Force, yBase, W, L,
                         r100Long, r100Larg, motifMixte, rMixte, r80Long,
-                        palettesChargeesTranches, surfaceChargeeTranches, nbRangsComplets,
+                        palettesChargeesTranches, surfaceChargeeTranches,
+                        surfacePerdueTranches, nbRangsComplets,
                         bestRef
                 );
             }
@@ -1884,7 +1915,8 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             ProfilCouloirs3 profil, int[] temp100, int[] temp80, int rotation100Force,
             int yBase, int W, int L,
             int r100Long, int r100Larg, MotifTranche3 motifMixte, int rMixte, int r80Long,
-            int palettesChargeesTranches, int surfaceChargeeTranches, int nbRangsComplets,
+            int palettesChargeesTranches, int surfaceChargeeTranches,
+            int surfacePerdueTranches, int nbRangsComplets,
             EvalSolution3[] bestRef
     ) {
         int c120 = profil.c120;
@@ -1894,6 +1926,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
 
         int nbChargees = palettesChargeesTranches;
         int surfaceChargee = surfaceChargeeTranches;
+        int surfacePerdueInternes = 0;
         int maxY = yBase;
         int minY = Integer.MAX_VALUE;
 
@@ -1901,6 +1934,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         int rotRestant = Math.max(0, rotation100Force);
 
         int[] yFinCol = new int[K];
+        int sommeLargeurCouloirs = c120 * 120 + c100 * 100 + c80 * 80;
 
         for (int k = 0; k < K; k++) {
             int largCol = (k < c120) ? 120 : ((k < c120 + c100) ? 100 : 80);
@@ -1920,6 +1954,13 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             int dy100Norm = 100;
             int dy100Rot = 120;
             int dy80 = (largCol == 120) ? 80 : 120;
+
+            if (largCol == 120 && n100Rot > 0 && !autorisationForcerRotation100) {
+                surfacePerdueInternes += n100Rot * (120 - 100) * 120;
+            }
+            if (largCol == 100 && n80 > 0) {
+                surfacePerdueInternes += n80 * (100 - 80) * 120;
+            }
 
             int hCol = n100Norm * dy100Norm + n100Rot * dy100Rot + n80 * dy80;
             int yFin = yBase + hCol;
@@ -1971,6 +2012,24 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             minY = yBase;
         }
         int ecart = maxY - minY;
+        int surfacePerdueDroiteCouloirs = Math.max(0, W - sommeLargeurCouloirs) * Math.max(0, maxY - yBase);
+
+        int perteModulo = 0;
+        int capFuture100 = 0;
+        for (int k = 0; k < K; k++) {
+            int largCol = (k < c120) ? 120 : ((k < c120 + c100) ? 100 : 80);
+            int pasCol = (largCol == 120) ? 80 : 120;
+            int resteCol = Math.max(0, L - yFinCol[k]);
+            perteModulo += (resteCol % pasCol) * largCol;
+            if (largCol == 120) {
+                capFuture100 += resteCol / 100;
+            } else if (largCol == 100) {
+                capFuture100 += resteCol / 120;
+            }
+        }
+
+        int surfacePerdueBout = (maxY <= L && (L - maxY) < 80) ? perteModulo : 0;
+        int surfacePerdueTotaleFond = surfacePerdueTranches + surfacePerdueInternes + surfacePerdueDroiteCouloirs + surfacePerdueBout;
 
         int rangA = yFinCol[0];
         int rangB = (K >= 2) ? yFinCol[1] : yBase;
@@ -1978,7 +2037,7 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
             rangA = yBase;
             rangB = yBase;
             for (int k = 0; k < K; k++) {
-                if (k < (K + 1) / 2) {
+                if (k < K / 2) {
                     rangA = Math.max(rangA, yFinCol[k]);
                 } else {
                     rangB = Math.max(rangB, yFinCol[k]);
@@ -1989,7 +2048,10 @@ surfaceRestante = surfaceRestante + (tableauResultat.get(0) * 1.2) +tableauResul
         EvalSolution3 cand = new EvalSolution3();
         cand.nbPalettesChargees = nbChargees;
         cand.surfaceChargee = surfaceChargee;
+        cand.surfacePerdueFond = surfacePerdueTotaleFond;
         cand.maxY = maxY;
+        cand.perteModuloCouloirs = perteModulo;
+        cand.capaciteFuture100 = capFuture100;
         cand.ecartCouloirs = ecart;
         cand.nbRangsComplets = nbRangsComplets;
         cand.rangA = rangA;
